@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Resistance - Revelação</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="reveal-screen">
+            <!-- Privacy Screen -->
+            <div class="privacy-screen" id="privacyScreen">
+                <div class="privacy-content">
+                    <h2>🔒 Privacidade</h2>
+                    <p class="player-indicator">Jogador <span id="currentPlayerNum">1</span></p>
+                    <p class="privacy-message">Passe o dispositivo para o próximo jogador</p>
+                    <button class="btn-primary btn-reveal" id="btnReveal">
+                        Revelar Meu Papel
+                    </button>
+                </div>
+            </div>
+
+            <!-- Role Reveal Screen -->
+            <div class="role-screen hidden" id="roleScreen">
+                <div class="role-content">
+                    <div class="player-badge">
+                        <span class="badge-label">Jogador</span>
+                        <span class="badge-number" id="playerNumber">1</span>
+                    </div>
+
+                    <div class="role-card" id="roleCard">
+                        <h2 class="role-title" id="roleTitle">Resistência</h2>
+                        <div class="role-icon" id="roleIcon">🎭</div>
+                        <div class="faction-badge" id="factionBadge">Resistência</div>
+                        
+                        <div class="role-info" id="roleInfo">
+                            <!-- Dynamic content will be inserted here -->
+                        </div>
+                    </div>
+
+                    <button class="btn-primary btn-next" id="btnNext">
+                        Próximo Jogador
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/game.js"></script>
+    <script src="js/reveal.js"></script>
+</body>
+</html>
