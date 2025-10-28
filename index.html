@@ -47,7 +47,7 @@
                         <div class="character-card">
                             <h3>👑 Comandante</h3>
                             <span class="faction">Resistência</span>
-                            <p>Conhece todos os espiões (incluindo Espião Cego)</p>
+                            <p>Conhece todos os espiões</p>
                         </div>
                     </label>
 
@@ -56,7 +56,7 @@
                         <div class="character-card">
                             <h3>🛡️ Guarda-Costas</h3>
                             <span class="faction">Resistência</span>
-                            <p>Conhece o Comandante e protege ele</p>
+                            <p>Protege o Comandante</p>
                         </div>
                     </label>
 
@@ -65,7 +65,7 @@
                         <div class="character-card">
                             <h3>🗡️ Assassino</h3>
                             <span class="faction">Espião</span>
-                            <p>Deve eliminar o Comandante para vencer</p>
+                            <p>Deve eliminar o Comandante</p>
                         </div>
                     </label>
 
@@ -74,16 +74,7 @@
                         <div class="character-card">
                             <h3>👁️ Espião Cego</h3>
                             <span class="faction">Espião</span>
-                            <p>Não conhece/é conhecido por outros espiões, mas Comandante o conhece</p>
-                        </div>
-                    </label>
-
-                    <label class="character-option spy">
-                        <input type="checkbox" id="agenteinvisivel" value="agenteinvisivel">
-                        <div class="character-card">
-                            <h3>👻 Agente Invisível</h3>
-                            <span class="faction">Espião</span>
-                            <p>Invisível ao Comandante, mas conhece os espiões</p>
+                            <p>Não conhece outros espiões</p>
                         </div>
                     </label>
 
@@ -92,7 +83,7 @@
                         <div class="character-card">
                             <h3>👹 Comandante Falso</h3>
                             <span class="faction">Espião</span>
-                            <p>Se revela ao Guarda-Costas como Comandante</p>
+                            <p>Parece ser Comandante</p>
                         </div>
                     </label>
 
@@ -111,30 +102,14 @@
                     <h3>Opções do Comandante Falso:</h3>
                     <div class="radio-group">
                         <label class="radio-option">
-                            <input type="radio" name="comandanteFalsoType" value="doesntKnow" checked>
-                            <span>Não conhece os espiões (regra oficial)</span>
+                            <input type="radio" name="comandanteFalsoType" value="knows" checked>
+                            <span>Conhece os espiões</span>
                         </label>
                         <label class="radio-option">
-                            <input type="radio" name="comandanteFalsoType" value="knows">
-                            <span>Conhece os espiões (variante)</span>
+                            <input type="radio" name="comandanteFalsoType" value="doesntKnow">
+                            <span>Não conhece os espiões (regra clássica)</span>
                         </label>
                     </div>
-                </div>
-
-                <!-- Desertor Options -->
-                <div id="desertorOptions" class="special-options" style="display: none;">
-                    <h3>Opções do Desertor:</h3>
-                    <div class="radio-group">
-                        <label class="radio-option">
-                            <input type="radio" name="desertorType" value="dontKnow" checked>
-                            <span>Desertores NÃO se conhecem (padrão)</span>
-                        </label>
-                        <label class="radio-option">
-                            <input type="radio" name="desertorType" value="knowEachOther">
-                            <span>Desertores se conhecem (para muitos jogadores)</span>
-                        </label>
-                    </div>
-                    <p class="info-text">⚠️ Baralho de Troca de Lealdade deve ser usado fisicamente (não implementado no app)</p>
                 </div>
             </section>
 
