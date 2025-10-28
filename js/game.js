@@ -9,8 +9,8 @@ const GameManager = {
             faction: 'resistance',
             isSpecial: true,
             knowsSpies: true,
-            knowsCommander: false,
-            description: 'Você é o líder da Resistência e conhece todos os espiões!'
+            knowsBlindSpy: true, // SEMPRE conhece o Espião Cego (regra oficial)
+            description: 'Você é o líder da Resistência e conhece TODOS os espiões (incluindo o Espião Cego)!'
         },
         guardacostas: {
             name: 'Guarda-Costas',
@@ -18,7 +18,7 @@ const GameManager = {
             faction: 'resistance',
             isSpecial: true,
             knowsCommander: true,
-            description: 'Você protege o Comandante da Resistência e sabe quem ele é.'
+            description: 'Você sabe quem é o Comandante e deve protegê-lo.'
         },
         desertorResistencia: {
             name: 'Desertor',
@@ -26,7 +26,7 @@ const GameManager = {
             faction: 'resistance',
             isSpecial: true,
             isDesertor: true,
-            description: 'Você está na Resistência, mas pode trocar de lado durante o jogo.'
+            description: 'Você está na Resistência, mas pode trocar de lado durante o jogo. Use o Baralho de Troca de Lealdade.'
         },
         // Spy characters
         assassino: {
@@ -36,7 +36,7 @@ const GameManager = {
             isSpecial: true,
             knowsSpies: true,
             visibleToCommander: true,
-            description: 'Você deve identificar e eliminar o Comandante para vencer!'
+            description: 'Você deve identificar e eliminar o Comandante para vencer! Se a Resistência vencer 3 missões, você tem uma chance de matá-lo.'
         },
         espiaocego: {
             name: 'Espião Cego',
@@ -44,8 +44,8 @@ const GameManager = {
             faction: 'spy',
             isSpecial: true,
             isBlind: true,
-            visibleToCommander: true, // Will be set based on user choice
-            description: 'Você é um espião, mas não conhece os outros espiões (e eles não conhecem você).'
+            visibleToCommander: true, // SEMPRE visível ao Comandante (regra oficial)
+            description: 'Você não conhece os outros espiões e eles não conhecem você, MAS o Comandante sabe quem você é.'
         },
         agenteinvisivel: {
             name: 'Agente Invisível',
@@ -53,8 +53,8 @@ const GameManager = {
             faction: 'spy',
             isSpecial: true,
             knowsSpies: true,
-            visibleToCommander: false,
-            description: 'Você conhece os outros espiões, mas é invisível ao Comandante!'
+            visibleToCommander: false, // Invisível ao Comandante (regra oficial)
+            description: 'Você conhece os outros espiões, mas é INVISÍVEL ao Comandante!'
         },
         comandantefalso: {
             name: 'Comandante Falso',
@@ -62,9 +62,9 @@ const GameManager = {
             faction: 'spy',
             isSpecial: true,
             isFalseCommander: true,
-            knowsSpies: false, // Will be set based on user choice
+            knowsSpies: false, // Padrão: não conhece (pode ser alterado por opção)
             visibleToCommander: true,
-            description: 'Você parece ser o Comandante, mas é um espião!'
+            description: 'Você se revela ao Guarda-Costas como se fosse o Comandante!'
         },
         desertorEspiao: {
             name: 'Desertor',
@@ -74,7 +74,8 @@ const GameManager = {
             isDesertor: true,
             knowsSpies: true,
             visibleToCommander: true,
-            description: 'Você é um espião, mas pode trocar de lado durante o jogo.'
+            thumbsUp: true, // Estende polegar ao invés de abrir olhos
+            description: 'Você é um espião desertor. Durante a revelação, estenda seu polegar ao invés de abrir os olhos.'
         }
     },
 
@@ -102,29 +103,33 @@ const GameManager = {
                 const char = { ...this.characters.comandantefalso };
                 char.knowsSpies = options.comandanteFalsoKnows;
                 if (!options.comandanteFalsoKnows) {
-                    char.description = 'Você parece ser o Comandante, mas é um espião! Não conhece os outros espiões.';
+                    char.description = 'Você se revela ao Guarda-Costas como Comandante, mas NÃO conhece os outros espiões.';
                 } else {
-                    char.description = 'Você parece ser o Comandante, mas é um espião! Você conhece os outros espiões.';
+                    char.description = 'Você se revela ao Guarda-Costas como Comandante e conhece os outros espiões (variante).';
                 }
-                specialsUsed.spy.push({
-                    ...char,
-                    key: specialKey
-                });
-            } else if (specialKey === 'espiaocego') {
-                const char = { ...this.characters.espiaocego };
-                char.visibleToCommander = options.comandanteKnowsBlindSpy;
                 specialsUsed.spy.push({
                     ...char,
                     key: specialKey
                 });
             } else if (specialKey === 'desertor') {
                 // Add both desertor types
+                const desertorRes = { ...this.characters.desertorResistencia };
+                const desertorSpy = { ...this.characters.desertorEspiao };
+                
+                // Se desertores se conhecem
+                if (options.desertoresKnowEachOther) {
+                    desertorRes.knowsOtherDesertor = true;
+                    desertorSpy.knowsOtherDesertor = true;
+                    desertorRes.description += ' Você conhece o outro Desertor.';
+                    desertorSpy.description += ' Você conhece o outro Desertor.';
+                }
+                
                 specialsUsed.resistance.push({
-                    ...this.characters.desertorResistencia,
+                    ...desertorRes,
                     key: 'desertorResistencia'
                 });
                 specialsUsed.spy.push({
-                    ...this.characters.desertorEspiao,
+                    ...desertorSpy,
                     key: 'desertorEspiao'
                 });
             } else {
@@ -181,11 +186,23 @@ const GameManager = {
         // Shuffle roles
         const shuffledRoles = this.shuffleArray(roles);
         
-        // Assign player names
+        // Assign player names and find desertores
+        let desertorIndices = [];
         shuffledRoles.forEach((role, index) => {
             role.playerName = playerNames[index] || `Jogador ${index + 1}`;
             role.playerIndex = index;
+            
+            // Track desertores
+            if (role.isDesertor) {
+                desertorIndices.push(index);
+            }
         });
+
+        // If desertores know each other, add the info
+        if (options.desertoresKnowEachOther && desertorIndices.length === 2) {
+            shuffledRoles[desertorIndices[0]].otherDesertorIndex = desertorIndices[1];
+            shuffledRoles[desertorIndices[1]].otherDesertorIndex = desertorIndices[0];
+        }
 
         return shuffledRoles;
     },
@@ -210,8 +227,29 @@ const GameManager = {
                     name: role.displayName,
                     playerName: role.playerName,
                     playerNum: index + 1,
-                    visibleToCommander: role.visibleToCommander !== false
+                    visibleToCommander: role.visibleToCommander !== false,
+                    thumbsUp: role.thumbsUp || false
                 });
+            }
+        });
+        return spies;
+    },
+
+    // Get ALL spies including blind spy (for Comandante only)
+    getAllSpiesForCommander(roles) {
+        const spies = [];
+        roles.forEach((role, index) => {
+            if (role.faction === 'spy') {
+                // Comandante vê TODOS exceto os invisíveis
+                if (role.visibleToCommander !== false) {
+                    spies.push({
+                        index: index,
+                        name: role.displayName,
+                        playerName: role.playerName,
+                        playerNum: index + 1,
+                        isBlind: role.isBlind || false
+                    });
+                }
             }
         });
         return spies;

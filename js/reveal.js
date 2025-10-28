@@ -1,191 +1,297 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const gameState = GameManager.loadGame();
-    
-    if (!gameState) {
-        alert('Nenhum jogo encontrado! Redirecionando para configuração...');
-        window.location.href = 'index.html';
-        return;
-    }
-
-    let currentPlayer = 0;
-    const { playerCount, roles, playerNames } = gameState;
-
-    // Update UI for current player
-    function updateUI() {
-        const playerName = roles[currentPlayer].playerName;
-        document.getElementById('currentPlayerNum').textContent = playerName;
-        document.getElementById('playerNumber').textContent = playerName;
-    }
-
-    // Show privacy screen
-    function showPrivacyScreen() {
-        document.getElementById('privacyScreen').classList.remove('hidden');
-        document.getElementById('roleScreen').classList.add('hidden');
-    }
-
-    // Show role screen
-    function showRoleScreen() {
-        document.getElementById('privacyScreen').classList.add('hidden');
-        document.getElementById('roleScreen').classList.remove('hidden');
-        
-        const role = roles[currentPlayer];
-        displayRole(role);
-    }
-
-    // Display role information
-    function displayRole(role) {
-        const roleCard = document.getElementById('roleCard');
-        const roleTitle = document.getElementById('roleTitle');
-        const roleIcon = document.getElementById('roleIcon');
-        const factionBadge = document.getElementById('factionBadge');
-        const roleInfo = document.getElementById('roleInfo');
-
-        // Set faction styling
-        roleCard.className = 'role-card ' + role.faction;
-        factionBadge.className = 'faction-badge ' + role.faction;
-        
-        // Set basic info
-        roleTitle.textContent = role.displayName;
-        roleIcon.textContent = role.displayName.split(' ')[0]; // Get emoji
-        factionBadge.textContent = role.faction === 'resistance' ? 'Resistência' : 'Espião';
-
-        // Build role information
-        let infoHTML = `<p>${role.description}</p>`;
-
-        // Comandante - shows spies (respecting visibility rules)
-        if (role.key === 'comandante') {
-            const spies = GameManager.getSpyInfo(roles, currentPlayer);
-            const visibleSpies = spies.filter(s => s.visibleToCommander);
-            
-            if (visibleSpies.length > 0) {
-                infoHTML += `
-                    <div class="spy-list">
-                        <h3>🔍 Espiões Identificados:</h3>
-                        <ul>
-                            ${visibleSpies.map(spy => `<li><strong>${spy.playerName}</strong></li>`).join('')}
-                        </ul>
-                    </div>
-                `;
-            }
+// Game state and character definitions
+const GameManager = {
+    // Character definitions
+    characters: {
+        // Resistance characters
+        comandante: {
+            name: 'Comandante',
+            displayName: '👑 Comandante',
+            faction: 'resistance',
+            isSpecial: true,
+            knowsSpies: true,
+            knowsBlindSpy: true, // SEMPRE conhece o Espião Cego (regra oficial)
+            description: 'Você é o líder da Resistência e conhece TODOS os espiões (incluindo o Espião Cego)!'
+        },
+        guardacostas: {
+            name: 'Guarda-Costas',
+            displayName: '🛡️ Guarda-Costas',
+            faction: 'resistance',
+            isSpecial: true,
+            knowsCommander: true,
+            description: 'Você sabe quem é o Comandante e deve protegê-lo.'
+        },
+        desertorResistencia: {
+            name: 'Desertor',
+            displayName: '🔄 Desertor',
+            faction: 'resistance',
+            isSpecial: true,
+            isDesertor: true,
+            description: 'Você está na Resistência, mas pode trocar de lado durante o jogo. Use o Baralho de Troca de Lealdade.'
+        },
+        // Spy characters
+        assassino: {
+            name: 'Assassino',
+            displayName: '🗡️ Assassino',
+            faction: 'spy',
+            isSpecial: true,
+            knowsSpies: true,
+            visibleToCommander: true,
+            description: 'Você deve identificar e eliminar o Comandante para vencer! Se a Resistência vencer 3 missões, você tem uma chance de matá-lo.'
+        },
+        espiaocego: {
+            name: 'Espião Cego',
+            displayName: '👁️ Espião Cego',
+            faction: 'spy',
+            isSpecial: true,
+            isBlind: true,
+            visibleToCommander: true, // SEMPRE visível ao Comandante (regra oficial)
+            description: 'Você não conhece os outros espiões e eles não conhecem você, MAS o Comandante sabe quem você é.'
+        },
+        agenteinvisivel: {
+            name: 'Agente Invisível',
+            displayName: '👻 Agente Invisível',
+            faction: 'spy',
+            isSpecial: true,
+            knowsSpies: true,
+            visibleToCommander: false, // Invisível ao Comandante (regra oficial)
+            description: 'Você conhece os outros espiões, mas é INVISÍVEL ao Comandante!'
+        },
+        comandantefalso: {
+            name: 'Comandante Falso',
+            displayName: '👹 Comandante Falso',
+            faction: 'spy',
+            isSpecial: true,
+            isFalseCommander: true,
+            knowsSpies: false, // Padrão: não conhece (pode ser alterado por opção)
+            visibleToCommander: true,
+            description: 'Você se revela ao Guarda-Costas como se fosse o Comandante!'
+        },
+        desertorEspiao: {
+            name: 'Desertor',
+            displayName: '🔄 Desertor',
+            faction: 'spy',
+            isSpecial: true,
+            isDesertor: true,
+            knowsSpies: true,
+            visibleToCommander: true,
+            thumbsUp: true, // Estende polegar ao invés de abrir olhos
+            description: 'Você é um espião desertor. Durante a revelação, estenda seu polegar ao invés de abrir os olhos.'
         }
+    },
 
-        // Guarda-Costas - shows commander(s)
-        if (role.key === 'guardacostas') {
-            const commanders = GameManager.getCommanderInfo(roles);
-            
-            if (commanders.length > 0) {
-                infoHTML += `
-                    <div class="spy-list">
-                        <h3>👑 Comandante(s) Identificado(s):</h3>
-                        <ul>
-                            ${commanders.map(cmd => `<li><strong>${cmd.playerName}</strong></li>`).join('')}
-                        </ul>
-                `;
+    // Get spy count based on player count
+    getSpyCount(playerCount) {
+        if (playerCount <= 6) return 2;
+        if (playerCount <= 8) return 3;
+        return 4;
+    },
+
+    // Distribute roles to players
+    distributeRoles(playerCount, selectedSpecials, options, playerNames) {
+        const spyCount = this.getSpyCount(playerCount);
+        const resistanceCount = playerCount - spyCount;
+        
+        const roles = [];
+        let specialsUsed = {
+            resistance: [],
+            spy: []
+        };
+
+        // Process selected special characters
+        selectedSpecials.forEach(specialKey => {
+            if (specialKey === 'comandantefalso') {
+                const char = { ...this.characters.comandantefalso };
+                char.knowsSpies = options.comandanteFalsoKnows;
+                if (!options.comandanteFalsoKnows) {
+                    char.description = 'Você se revela ao Guarda-Costas como Comandante, mas NÃO conhece os outros espiões.';
+                } else {
+                    char.description = 'Você se revela ao Guarda-Costas como Comandante e conhece os outros espiões (variante).';
+                }
+                specialsUsed.spy.push({
+                    ...char,
+                    key: specialKey
+                });
+            } else if (specialKey === 'desertor') {
+                // Add both desertor types
+                const desertorRes = { ...this.characters.desertorResistencia };
+                const desertorSpy = { ...this.characters.desertorEspiao };
                 
-                if (commanders.length > 1) {
-                    infoHTML += `<p class="warning">⚠️ Atenção: Há mais de um comandante! Um deles é falso, mas você não sabe qual.</p>`;
+                // Se desertores se conhecem
+                if (options.desertoresKnowEachOther) {
+                    desertorRes.knowsOtherDesertor = true;
+                    desertorSpy.knowsOtherDesertor = true;
+                    desertorRes.description += ' Você conhece o outro Desertor.';
+                    desertorSpy.description += ' Você conhece o outro Desertor.';
                 }
                 
-                infoHTML += `</div>`;
+                specialsUsed.resistance.push({
+                    ...desertorRes,
+                    key: 'desertorResistencia'
+                });
+                specialsUsed.spy.push({
+                    ...desertorSpy,
+                    key: 'desertorEspiao'
+                });
+            } else {
+                const char = this.characters[specialKey];
+                specialsUsed[char.faction].push({
+                    ...char,
+                    key: specialKey
+                });
             }
+        });
+
+        // Add special resistance roles
+        specialsUsed.resistance.forEach(char => {
+            roles.push({
+                ...char,
+                faction: 'resistance'
+            });
+        });
+
+        // Add special spy roles
+        specialsUsed.spy.forEach(char => {
+            roles.push({
+                ...char,
+                faction: 'spy'
+            });
+        });
+
+        // Fill remaining resistance slots
+        const remainingResistance = resistanceCount - specialsUsed.resistance.length;
+        for (let i = 0; i < remainingResistance; i++) {
+            roles.push({
+                name: 'Membro da Resistência',
+                displayName: '🎭 Membro da Resistência',
+                faction: 'resistance',
+                isSpecial: false,
+                description: 'Você é um membro leal da Resistência.'
+            });
         }
 
-        // Regular spies (not blind, not false commander without knowledge)
-        if (role.knowsSpies && !role.isBlind && role.faction === 'spy') {
-            const spies = GameManager.getSpyInfo(roles, currentPlayer);
-            const otherSpies = spies.filter(s => s.index !== currentPlayer);
-            
-            if (otherSpies.length > 0) {
-                infoHTML += `
-                    <div class="spy-list">
-                        <h3>🔍 Outros Espiões:</h3>
-                        <ul>
-                            ${otherSpies.map(spy => `<li><strong>${spy.playerName}</strong></li>`).join('')}
-                        </ul>
-                    </div>
-                `;
-            }
+        // Fill remaining spy slots
+        const remainingSpies = spyCount - specialsUsed.spy.length;
+        for (let i = 0; i < remainingSpies; i++) {
+            roles.push({
+                name: 'Espião',
+                displayName: '🕵️ Espião',
+                faction: 'spy',
+                isSpecial: false,
+                knowsSpies: true,
+                visibleToCommander: true,
+                description: 'Você é um espião infiltrado na Resistência.'
+            });
         }
 
-        // Blind spy warning
-        if (role.isBlind) {
-            infoHTML += `
-                <div class="info-box warning">
-                    <p><strong>⚠️ Atenção:</strong> Você não conhece os outros espiões e eles não conhecem você!</p>
-                </div>
-            `;
-        }
-
-        // Agente Invisível info
-        if (role.key === 'agenteinvisivel') {
-            infoHTML += `
-                <div class="info-box">
-                    <p><strong>👻 Invisibilidade:</strong> O Comandante NÃO consegue ver você!</p>
-                </div>
-            `;
-        }
-
-        // False Commander without knowledge
-        if (role.isFalseCommander && !role.knowsSpies) {
-            infoHTML += `
-                <div class="info-box warning">
-                    <p><strong>⚠️ Cuidado:</strong> Você parece ser o Comandante, mas é um espião! Você NÃO conhece os outros espiões.</p>
-                </div>
-            `;
-        }
-
-        // Assassino special mission
-        if (role.key === 'assassino') {
-            infoHTML += `
-                <div class="info-box">
-                    <h3>🎯 Missão Especial:</h3>
-                    <p>Se a Resistência vencer 3 missões, você terá a chance de identificar e eliminar o Comandante. Se acertar, os espiões vencem!</p>
-                </div>
-            `;
-        }
-
-        // Desertor ability
-        if (role.isDesertor) {
-            infoHTML += `
-                <div class="info-box">
-                    <h3>🔄 Habilidade Especial:</h3>
-                    <p>Você pode trocar de lado durante o jogo. Use esta habilidade estrategicamente!</p>
-                </div>
-            `;
-        }
-
-        roleInfo.innerHTML = infoHTML;
-
-        // Update next button
-        const btnNext = document.getElementById('btnNext');
-        if (currentPlayer === playerCount - 1) {
-            btnNext.textContent = 'Finalizar e Voltar';
-        } else {
-            btnNext.textContent = 'Próximo Jogador';
-        }
-    }
-
-    // Reveal button
-    document.getElementById('btnReveal').addEventListener('click', () => {
-        showRoleScreen();
-    });
-
-    // Next button
-    document.getElementById('btnNext').addEventListener('click', () => {
-        currentPlayer++;
+        // Shuffle roles
+        const shuffledRoles = this.shuffleArray(roles);
         
-        if (currentPlayer >= playerCount) {
-            // Game finished, return to setup
-            GameManager.clearGame();
-            window.location.href = 'index.html';
-        } else {
-            // Show next player
-            updateUI();
-            showPrivacyScreen();
-        }
-    });
+        // Assign player names and find desertores
+        let desertorIndices = [];
+        shuffledRoles.forEach((role, index) => {
+            role.playerName = playerNames[index] || `Jogador ${index + 1}`;
+            role.playerIndex = index;
+            
+            // Track desertores
+            if (role.isDesertor) {
+                desertorIndices.push(index);
+            }
+        });
 
-    // Initialize
-    updateUI();
-    showPrivacyScreen();
-});
+        // If desertores know each other, add the info
+        if (options.desertoresKnowEachOther && desertorIndices.length === 2) {
+            shuffledRoles[desertorIndices[0]].otherDesertorIndex = desertorIndices[1];
+            shuffledRoles[desertorIndices[1]].otherDesertorIndex = desertorIndices[0];
+        }
+
+        return shuffledRoles;
+    },
+
+    // Fisher-Yates shuffle
+    shuffleArray(array) {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+    },
+
+    // Get spy information for a player
+    getSpyInfo(roles, currentPlayerIndex) {
+        const spies = [];
+        roles.forEach((role, index) => {
+            if (role.faction === 'spy' && !role.isBlind) {
+                spies.push({
+                    index: index,
+                    name: role.displayName,
+                    playerName: role.playerName,
+                    playerNum: index + 1,
+                    visibleToCommander: role.visibleToCommander !== false,
+                    thumbsUp: role.thumbsUp || false
+                });
+            }
+        });
+        return spies;
+    },
+
+    // Get ALL spies including blind spy (for Comandante only)
+    getAllSpiesForCommander(roles) {
+        const spies = [];
+        roles.forEach((role, index) => {
+            if (role.faction === 'spy') {
+                // Comandante vê TODOS exceto os invisíveis
+                if (role.visibleToCommander !== false) {
+                    spies.push({
+                        index: index,
+                        name: role.displayName,
+                        playerName: role.playerName,
+                        playerNum: index + 1,
+                        isBlind: role.isBlind || false
+                    });
+                }
+            }
+        });
+        return spies;
+    },
+
+    // Get commander information (for Guarda-Costas)
+    getCommanderInfo(roles) {
+        const commanders = [];
+        roles.forEach((role, index) => {
+            if (role.key === 'comandante' || role.key === 'comandantefalso') {
+                commanders.push({
+                    index: index,
+                    name: role.displayName,
+                    playerName: role.playerName,
+                    playerNum: index + 1,
+                    isReal: role.key === 'comandante'
+                });
+            }
+        });
+        return commanders;
+    },
+
+    // Save game state
+    saveGame(playerCount, roles, playerNames) {
+        const gameState = {
+            playerCount: playerCount,
+            roles: roles,
+            playerNames: playerNames,
+            currentPlayer: 0,
+            timestamp: Date.now()
+        };
+        localStorage.setItem('resistanceGame', JSON.stringify(gameState));
+    },
+
+    // Load game state
+    loadGame() {
+        const saved = localStorage.getItem('resistanceGame');
+        return saved ? JSON.parse(saved) : null;
+    },
+
+    // Clear game state
+    clearGame() {
+        localStorage.removeItem('resistanceGame');
+    }
+};
