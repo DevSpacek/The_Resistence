@@ -1,475 +1,69 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-:root {
-    --resistance-color: #2196F3;
-    --spy-color: #f44336;
-    --neutral-color: #9e9e9e;
-    --bg-dark: #1a1a2e;
-    --bg-light: #16213e;
-    --text-light: #ffffff;
-    --text-muted: #b0b0b0;
-    --success-color: #4caf50;
-    --warning-color: #ff9800;
-}
-
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-light) 100%);
-    color: var(--text-light);
-    min-height: 100vh;
-    padding: 20px;
-    line-height: 1.6;
-}
-
-.container {
-    max-width: 600px;
-    margin: 0 auto;
-}
-
-header {
-    text-align: center;
-    margin-bottom: 30px;
-}
-
-h1 {
-    font-size: 2.5rem;
-    margin-bottom: 10px;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-}
-
-.subtitle {
-    font-size: 1.1rem;
-    color: var(--text-muted);
-}
-
-/* Setup Screen */
-.setup-screen {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 15px;
-    padding: 25px;
-    backdrop-filter: blur(10px);
-}
-
-.config-section {
-    margin-bottom: 30px;
-}
-
-.config-section h2 {
-    font-size: 1.5rem;
-    margin-bottom: 15px;
-    color: var(--text-light);
-}
-
-.config-section h3 {
-    font-size: 1.2rem;
-    margin-bottom: 10px;
-    color: var(--text-light);
-}
-
-.info-text {
-    color: var(--text-muted);
-    margin-bottom: 15px;
-    font-size: 0.95rem;
-}
-
-/* Player Selector */
-.player-selector {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-}
-
-.btn-player {
+/* History Section */
+.history-section {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px dashed rgba(255, 255, 255, 0.2);
     padding: 15px;
-    font-size: 1.2rem;
+    margin-bottom: 20px;
+}
+
+.history-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn-secondary {
+    flex: 1;
+    min-width: 200px;
+    padding: 12px 15px;
+    font-size: 1rem;
     font-weight: bold;
     background: rgba(255, 255, 255, 0.1);
     color: var(--text-light);
-    border: 2px solid transparent;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.btn-player:hover {
-    background: rgba(255, 255, 255, 0.15);
-    transform: translateY(-2px);
-}
-
-.btn-player.selected {
-    background: var(--resistance-color);
-    border-color: var(--resistance-color);
-    box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4);
-}
-
-/* Player Names */
-.player-names-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-}
-
-.player-name-input {
-    display: flex;
-    flex-direction: column;
-}
-
-.player-name-input label {
-    font-size: 0.9rem;
-    color: var(--text-muted);
-    margin-bottom: 5px;
-}
-
-.player-name-input input {
-    padding: 12px;
-    font-size: 1rem;
-    background: rgba(255, 255, 255, 0.1);
     border: 2px solid rgba(255, 255, 255, 0.2);
     border-radius: 8px;
-    color: var(--text-light);
+    cursor: pointer;
     transition: all 0.3s ease;
 }
 
-.player-name-input input:focus {
-    outline: none;
-    border-color: var(--resistance-color);
+.btn-secondary:hover {
     background: rgba(255, 255, 255, 0.15);
-}
-
-.player-name-input input::placeholder {
-    color: var(--text-muted);
-}
-
-/* Characters Grid */
-.characters-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 15px;
-}
-
-.character-option {
-    cursor: pointer;
-    display: block;
-}
-
-.character-option input[type="checkbox"] {
-    display: none;
-}
-
-.character-card {
-    background: rgba(255, 255, 255, 0.05);
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    padding: 15px;
-    transition: all 0.3s ease;
-}
-
-.character-card h3 {
-    font-size: 1.2rem;
-    margin-bottom: 5px;
-}
-
-.character-card .faction {
-    display: inline-block;
-    font-size: 0.85rem;
-    padding: 3px 10px;
-    border-radius: 12px;
-    margin-bottom: 8px;
-    font-weight: bold;
-}
-
-.character-option.resistance .faction {
-    background: var(--resistance-color);
-}
-
-.character-option.spy .faction {
-    background: var(--spy-color);
-}
-
-.character-option.neutral .faction {
-    background: var(--neutral-color);
-}
-
-.character-card p {
-    font-size: 0.9rem;
-    color: var(--text-muted);
-}
-
-.character-option input:checked + .character-card {
-    border-color: var(--success-color);
-    background: rgba(76, 175, 80, 0.1);
-    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
-}
-
-/* Special Options */
-.special-options {
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 10px;
-    padding: 15px;
-    margin-top: 15px;
-}
-
-.radio-group {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.radio-option {
-    display: flex;
-    align-items: center;
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.radio-option:hover {
-    background: rgba(255, 255, 255, 0.1);
-}
-
-.radio-option input[type="radio"] {
-    margin-right: 10px;
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-}
-
-.radio-option span {
-    font-size: 1rem;
-}
-
-/* Game Info */
-.game-info {
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 10px;
-    padding: 15px;
-    margin: 20px 0;
-    text-align: center;
-}
-
-.game-info p {
-    margin: 5px 0;
-}
-
-.game-info strong {
-    color: var(--resistance-color);
-}
-
-/* Buttons */
-.btn-primary {
-    width: 100%;
-    padding: 18px;
-    font-size: 1.2rem;
-    font-weight: bold;
-    background: var(--resistance-color);
-    color: white;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.btn-primary:hover:not(:disabled) {
-    background: #1976D2;
+    border-color: var(--resistance-color);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
 }
 
-.btn-primary:disabled {
-    background: rgba(255, 255, 255, 0.1);
+.btn-secondary:disabled {
+    background: rgba(255, 255, 255, 0.05);
     cursor: not-allowed;
     opacity: 0.5;
+    transform: none;
 }
 
-/* Reveal Screen */
-.reveal-screen {
-    min-height: 70vh;
+.btn-danger {
+    border-color: var(--spy-color);
 }
 
-.privacy-screen {
-    text-align: center;
-    padding: 40px 20px;
+.btn-danger:hover:not(:disabled) {
+    background: rgba(244, 67, 54, 0.2);
+    border-color: var(--spy-color);
 }
 
-.privacy-content {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 15px;
-    padding: 40px;
-    backdrop-filter: blur(10px);
-}
-
-.privacy-content h2 {
-    font-size: 2rem;
-    margin-bottom: 20px;
-}
-
-.player-indicator {
-    font-size: 1.5rem;
-    margin-bottom: 15px;
-    color: var(--resistance-color);
-}
-
-.player-indicator span {
-    font-weight: bold;
-    font-size: 2rem;
-}
-
-.privacy-message {
-    font-size: 1.1rem;
-    color: var(--text-muted);
-    margin-bottom: 30px;
-}
-
-.hidden {
-    display: none !important;
-}
-
-/* Role Screen */
-.role-screen {
-    padding: 20px;
-}
-
-.role-content {
-    text-align: center;
-}
-
-.player-badge {
-    display: inline-block;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    padding: 10px 20px;
-    margin-bottom: 20px;
-}
-
-.badge-label {
-    font-size: 0.9rem;
-    color: var(--text-muted);
-    margin-right: 5px;
-}
-
-.badge-number {
-    font-size: 1.5rem;
-    font-weight: bold;
-}
-
-.role-card {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 15px;
-    padding: 30px;
-    margin-bottom: 20px;
-    backdrop-filter: blur(10px);
-}
-
-.role-card.resistance {
-    border: 3px solid var(--resistance-color);
-    box-shadow: 0 8px 30px rgba(33, 150, 243, 0.3);
-}
-
-.role-card.spy {
-    border: 3px solid var(--spy-color);
-    box-shadow: 0 8px 30px rgba(244, 67, 54, 0.3);
-}
-
-.role-title {
-    font-size: 1.8rem;
-    margin-bottom: 15px;
-}
-
-.role-icon {
-    font-size: 4rem;
-    margin: 20px 0;
-}
-
-.faction-badge {
-    display: inline-block;
-    padding: 8px 20px;
-    border-radius: 20px;
-    font-size: 1.1rem;
-    font-weight: bold;
-    margin-bottom: 20px;
-}
-
-.faction-badge.resistance {
-    background: var(--resistance-color);
-}
-
-.faction-badge.spy {
-    background: var(--spy-color);
-}
-
-.role-info {
-    text-align: left;
-    margin-top: 20px;
-}
-
-.role-info h3 {
-    font-size: 1.3rem;
-    margin-bottom: 10px;
-    color: var(--warning-color);
-}
-
-.role-info p {
-    margin-bottom: 10px;
-    font-size: 1rem;
-}
-
-.spy-list, .info-box {
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 10px;
-    padding: 15px;
-    margin-top: 15px;
-}
-
-.spy-list ul {
-    list-style: none;
-    padding: 0;
-}
-
-.spy-list li {
-    padding: 8px;
-    margin: 5px 0;
-    background: rgba(255, 255, 255, 0.05);
+#historyInfo {
+    margin-top: 10px;
+    padding: 10px;
+    background: rgba(33, 150, 243, 0.1);
+    border-left: 3px solid var(--resistance-color);
     border-radius: 5px;
-    font-size: 1.1rem;
+    font-size: 0.9rem;
 }
 
-.warning {
-    color: var(--warning-color);
-    font-weight: bold;
-}
-
-.highlight {
-    color: var(--resistance-color);
-    font-weight: bold;
-}
-
-/* Responsive */
+/* Responsive for history buttons */
 @media (max-width: 480px) {
-    h1 {
-        font-size: 2rem;
+    .history-buttons {
+        flex-direction: column;
     }
-
-    .player-selector {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .characters-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .player-names-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .role-icon {
-        font-size: 3rem;
+    
+    .btn-secondary {
+        min-width: 100%;
     }
 }

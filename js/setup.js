@@ -3,6 +3,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectedSpecials = new Set();
     let playerNames = [];
 
+    // Check if there's saved history
+    checkHistory();
+
     // Player count selection
     const playerButtons = document.querySelectorAll('.btn-player');
     playerButtons.forEach(btn => {
@@ -28,6 +31,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         section.style.display = 'block';
         container.innerHTML = '';
+        
+        // Keep existing names if resizing
+        const existingNames = [...playerNames];
         playerNames = [];
 
         for (let i = 0; i < selectedPlayerCount; i++) {
@@ -41,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     id="player${i}" 
                     placeholder="Nome do jogador ${i + 1}"
                     data-index="${i}"
+                    value="${existingNames[i] || ''}"
                 >
             `;
             
@@ -51,8 +58,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 playerNames[i] = e.target.value.trim() || `Jogador ${i + 1}`;
             });
             
-            // Initialize with default name
-            playerNames[i] = `Jogador ${i + 1}`;
+            // Initialize with default or existing name
+            playerNames[i] = existingNames[i] || `Jogador ${i + 1}`;
         }
     }
 
@@ -130,6 +137,128 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Save current configuration to history
+    function saveToHistory() {
+        const options = {
+            comandanteFalsoKnows: false,
+            desertoresKnowEachOther: false
+        };
+
+        if (selectedSpecials.has('comandantefalso')) {
+            const selectedOption = document.querySelector('input[name="comandanteFalsoType"]:checked');
+            options.comandanteFalsoKnows = selectedOption.value === 'knows';
+        }
+
+        if (selectedSpecials.has('desertor')) {
+            const selectedOption = document.querySelector('input[name="desertorType"]:checked');
+            options.desertoresKnowEachOther = selectedOption.value === 'knowEachOther';
+        }
+
+        const history = {
+            playerCount: selectedPlayerCount,
+            playerNames: [...playerNames],
+            selectedSpecials: Array.from(selectedSpecials),
+            options: options,
+            timestamp: Date.now()
+        };
+
+        localStorage.setItem('resistanceHistory', JSON.stringify(history));
+    }
+
+    // Load configuration from history
+    function loadFromHistory() {
+        const saved = localStorage.getItem('resistanceHistory');
+        if (!saved) {
+            alert('Nenhum histórico encontrado!');
+            return;
+        }
+
+        const history = JSON.parse(saved);
+
+        // Set player count
+        selectedPlayerCount = history.playerCount;
+        playerButtons.forEach(btn => {
+            btn.classList.remove('selected');
+            if (parseInt(btn.dataset.players) === history.playerCount) {
+                btn.classList.add('selected');
+            }
+        });
+
+        // Set player names
+        playerNames = [...history.playerNames];
+        generatePlayerNameInputs();
+
+        // Set selected specials
+        selectedSpecials.clear();
+        characterCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+
+        history.selectedSpecials.forEach(special => {
+            selectedSpecials.add(special);
+            const checkbox = document.getElementById(special);
+            if (checkbox) {
+                checkbox.checked = true;
+                
+                // Show options if needed
+                if (special === 'comandantefalso') {
+                    document.getElementById('comandanteFalsoOptions').style.display = 'block';
+                    const option = history.options.comandanteFalsoKnows ? 'knows' : 'doesntKnow';
+                    document.querySelector(`input[name="comandanteFalsoType"][value="${option}"]`).checked = true;
+                }
+                
+                if (special === 'desertor') {
+                    document.getElementById('desertorOptions').style.display = 'block';
+                    const option = history.options.desertoresKnowEachOther ? 'knowEachOther' : 'dontKnow';
+                    document.querySelector(`input[name="desertorType"][value="${option}"]`).checked = true;
+                }
+            }
+        });
+
+        updateGameInfo();
+        validateStart();
+
+        alert('✅ Configuração carregada com sucesso!');
+    }
+
+    // Check if history exists
+    function checkHistory() {
+        const saved = localStorage.getItem('resistanceHistory');
+        const btnLoad = document.getElementById('btnLoadHistory');
+        const btnClear = document.getElementById('btnClearHistory');
+        const historyInfo = document.getElementById('historyInfo');
+
+        if (saved) {
+            const history = JSON.parse(saved);
+            const date = new Date(history.timestamp);
+            const dateStr = date.toLocaleString('pt-BR');
+
+            btnLoad.disabled = false;
+            btnClear.disabled = false;
+            historyInfo.style.display = 'block';
+            historyInfo.textContent = `Última configuração: ${history.playerCount} jogadores - ${dateStr}`;
+        } else {
+            btnLoad.disabled = true;
+            btnClear.disabled = true;
+            historyInfo.style.display = 'none';
+        }
+    }
+
+    // Clear history
+    function clearHistory() {
+        if (confirm('Tem certeza que deseja limpar o histórico?')) {
+            localStorage.removeItem('resistanceHistory');
+            checkHistory();
+            alert('🗑️ Histórico limpo com sucesso!');
+        }
+    }
+
+    // Load History Button
+    document.getElementById('btnLoadHistory').addEventListener('click', loadFromHistory);
+
+    // Clear History Button
+    document.getElementById('btnClearHistory').addEventListener('click', clearHistory);
+
     // Start game
     document.getElementById('btnStart').addEventListener('click', () => {
         if (!selectedPlayerCount) {
@@ -137,19 +266,20 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Save to history before starting
+        saveToHistory();
+
         // Get options
         const options = {
-            comandanteFalsoKnows: false, // Padrão: não conhece
-            desertoresKnowEachOther: false // Padrão: não se conhecem
+            comandanteFalsoKnows: false,
+            desertoresKnowEachOther: false
         };
 
-        // Get Comandante Falso preference
         if (selectedSpecials.has('comandantefalso')) {
             const selectedOption = document.querySelector('input[name="comandanteFalsoType"]:checked');
             options.comandanteFalsoKnows = selectedOption.value === 'knows';
         }
 
-        // Get Desertor preference
         if (selectedSpecials.has('desertor')) {
             const selectedOption = document.querySelector('input[name="desertorType"]:checked');
             options.desertoresKnowEachOther = selectedOption.value === 'knowEachOther';
