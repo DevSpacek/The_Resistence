@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Resistance - Configuração</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎭 The Resistance</h1>
+            <p class="subtitle">Configure sua partida</p>
+        </header>
+
+        <main class="setup-screen">
+            <section class="config-section">
+                <h2>Número de Jogadores</h2>
+                <div class="player-selector">
+                    <button type="button" class="btn-player" data-players="5">5</button>
+                    <button type="button" class="btn-player" data-players="6">6</button>
+                    <button type="button" class="btn-player" data-players="7">7</button>
+                    <button type="button" class="btn-player" data-players="8">8</button>
+                    <button type="button" class="btn-player" data-players="9">9</button>
+                    <button type="button" class="btn-player" data-players="10">10</button>
+                </div>
+            </section>
+
+            <section class="config-section">
+                <h2>Personagens Especiais</h2>
+                <p class="info-text">Selecione os personagens que deseja incluir na partida:</p>
+                
+                <div class="characters-grid">
+                    <label class="character-option resistance">
+                        <input type="checkbox" id="comandante" value="comandante">
+                        <div class="character-card">
+                            <h3>👑 Comandante</h3>
+                            <span class="faction">Resistência</span>
+                            <p>Conhece todos os espiões</p>
+                        </div>
+                    </label>
+
+                    <label class="character-option resistance">
+                        <input type="checkbox" id="guardacostas" value="guardacostas">
+                        <div class="character-card">
+                            <h3>🛡️ Guarda-Costas</h3>
+                            <span class="faction">Resistência</span>
+                            <p>Protege o Comandante</p>
+                        </div>
+                    </label>
+
+                    <label class="character-option spy">
+                        <input type="checkbox" id="assassino" value="assassino">
+                        <div class="character-card">
+                            <h3>🗡️ Assassino</h3>
+                            <span class="faction">Espião</span>
+                            <p>Deve eliminar o Comandante</p>
+                        </div>
+                    </label>
+
+                    <label class="character-option spy">
+                        <input type="checkbox" id="espiaocego" value="espiaocego">
+                        <div class="character-card">
+                            <h3>👁️ Espião Cego</h3>
+                            <span class="faction">Espião</span>
+                            <p>Não conhece outros espiões</p>
+                        </div>
+                    </label>
+
+                    <label class="character-option neutral">
+                        <input type="checkbox" id="inquisidor" value="inquisidor">
+                        <div class="character-card">
+                            <h3>⚖️ Inquisidor</h3>
+                            <span class="faction">Qualquer facção</span>
+                            <p>Pode verificar a lealdade de um jogador</p>
+                        </div>
+                    </label>
+
+                    <label class="character-option spy">
+                        <input type="checkbox" id="comandantefalso" value="comandantefalso">
+                        <div class="character-card">
+                            <h3>👹 Comandante Falso</h3>
+                            <span class="faction">Espião</span>
+                            <p>Parece ser Comandante mas não conhece espiões</p>
+                        </div>
+                    </label>
+                </div>
+            </section>
+
+            <div class="game-info" id="gameInfo">
+                <p>Selecione o número de jogadores para continuar</p>
+            </div>
+
+            <button class="btn-primary btn-start" id="btnStart" disabled>
+                Iniciar Jogo
+            </button>
+        </main>
+    </div>
+
+    <script src="js/game.js"></script>
+    <script src="js/setup.js"></script>
+</body>
+</html>
