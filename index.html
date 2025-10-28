@@ -56,7 +56,7 @@
                         <div class="character-card">
                             <h3>🛡️ Guarda-Costas</h3>
                             <span class="faction">Resistência</span>
-                            <p>Protege o Comandante</p>
+                            <p>Conhece o Comandante</p>
                         </div>
                     </label>
 
@@ -79,6 +79,15 @@
                     </label>
 
                     <label class="character-option spy">
+                        <input type="checkbox" id="agenteinvisivel" value="agenteinvisivel">
+                        <div class="character-card">
+                            <h3>👻 Agente Invisível</h3>
+                            <span class="faction">Espião</span>
+                            <p>Invisível ao Comandante, mas conhece os espiões</p>
+                        </div>
+                    </label>
+
+                    <label class="character-option spy">
                         <input type="checkbox" id="comandantefalso" value="comandantefalso">
                         <div class="character-card">
                             <h3>👹 Comandante Falso</h3>
@@ -95,6 +104,21 @@
                             <p>1 Resistência + 1 Espião que podem trocar de lado</p>
                         </div>
                     </label>
+                </div>
+
+                <!-- Espião Cego Options -->
+                <div id="espiaoCegoOptions" class="special-options" style="display: none;">
+                    <h3>Opções do Espião Cego:</h3>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="espiaoCegoType" value="commanderKnows" checked>
+                            <span>Comandante conhece o Espião Cego</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="espiaoCegoType" value="commanderDoesntKnow">
+                            <span>Comandante NÃO conhece o Espião Cego</span>
+                        </label>
+                    </div>
                 </div>
 
                 <!-- Comandante Falso Options -->

@@ -9,6 +9,7 @@ const GameManager = {
             faction: 'resistance',
             isSpecial: true,
             knowsSpies: true,
+            knowsCommander: false,
             description: 'Você é o líder da Resistência e conhece todos os espiões!'
         },
         guardacostas: {
@@ -16,7 +17,8 @@ const GameManager = {
             displayName: '🛡️ Guarda-Costas',
             faction: 'resistance',
             isSpecial: true,
-            description: 'Você protege o Comandante da Resistência.'
+            knowsCommander: true,
+            description: 'Você protege o Comandante da Resistência e sabe quem ele é.'
         },
         desertorResistencia: {
             name: 'Desertor',
@@ -33,6 +35,7 @@ const GameManager = {
             faction: 'spy',
             isSpecial: true,
             knowsSpies: true,
+            visibleToCommander: true,
             description: 'Você deve identificar e eliminar o Comandante para vencer!'
         },
         espiaocego: {
@@ -41,7 +44,17 @@ const GameManager = {
             faction: 'spy',
             isSpecial: true,
             isBlind: true,
+            visibleToCommander: true, // Will be set based on user choice
             description: 'Você é um espião, mas não conhece os outros espiões (e eles não conhecem você).'
+        },
+        agenteinvisivel: {
+            name: 'Agente Invisível',
+            displayName: '👻 Agente Invisível',
+            faction: 'spy',
+            isSpecial: true,
+            knowsSpies: true,
+            visibleToCommander: false,
+            description: 'Você conhece os outros espiões, mas é invisível ao Comandante!'
         },
         comandantefalso: {
             name: 'Comandante Falso',
@@ -50,6 +63,7 @@ const GameManager = {
             isSpecial: true,
             isFalseCommander: true,
             knowsSpies: false, // Will be set based on user choice
+            visibleToCommander: true,
             description: 'Você parece ser o Comandante, mas é um espião!'
         },
         desertorEspiao: {
@@ -59,6 +73,7 @@ const GameManager = {
             isSpecial: true,
             isDesertor: true,
             knowsSpies: true,
+            visibleToCommander: true,
             description: 'Você é um espião, mas pode trocar de lado durante o jogo.'
         }
     },
@@ -71,7 +86,7 @@ const GameManager = {
     },
 
     // Distribute roles to players
-    distributeRoles(playerCount, selectedSpecials, comandanteFalsoKnows, playerNames) {
+    distributeRoles(playerCount, selectedSpecials, options, playerNames) {
         const spyCount = this.getSpyCount(playerCount);
         const resistanceCount = playerCount - spyCount;
         
@@ -85,12 +100,19 @@ const GameManager = {
         selectedSpecials.forEach(specialKey => {
             if (specialKey === 'comandantefalso') {
                 const char = { ...this.characters.comandantefalso };
-                char.knowsSpies = comandanteFalsoKnows;
-                if (!comandanteFalsoKnows) {
+                char.knowsSpies = options.comandanteFalsoKnows;
+                if (!options.comandanteFalsoKnows) {
                     char.description = 'Você parece ser o Comandante, mas é um espião! Não conhece os outros espiões.';
                 } else {
                     char.description = 'Você parece ser o Comandante, mas é um espião! Você conhece os outros espiões.';
                 }
+                specialsUsed.spy.push({
+                    ...char,
+                    key: specialKey
+                });
+            } else if (specialKey === 'espiaocego') {
+                const char = { ...this.characters.espiaocego };
+                char.visibleToCommander = options.comandanteKnowsBlindSpy;
                 specialsUsed.spy.push({
                     ...char,
                     key: specialKey
@@ -151,6 +173,7 @@ const GameManager = {
                 faction: 'spy',
                 isSpecial: false,
                 knowsSpies: true,
+                visibleToCommander: true,
                 description: 'Você é um espião infiltrado na Resistência.'
             });
         }
@@ -186,11 +209,29 @@ const GameManager = {
                     index: index,
                     name: role.displayName,
                     playerName: role.playerName,
-                    playerNum: index + 1
+                    playerNum: index + 1,
+                    visibleToCommander: role.visibleToCommander !== false
                 });
             }
         });
         return spies;
+    },
+
+    // Get commander information (for Guarda-Costas)
+    getCommanderInfo(roles) {
+        const commanders = [];
+        roles.forEach((role, index) => {
+            if (role.key === 'comandante' || role.key === 'comandantefalso') {
+                commanders.push({
+                    index: index,
+                    name: role.displayName,
+                    playerName: role.playerName,
+                    playerNum: index + 1,
+                    isReal: role.key === 'comandante'
+                });
+            }
+        });
+        return commanders;
     },
 
     // Save game state

@@ -52,25 +52,46 @@ document.addEventListener('DOMContentLoaded', () => {
         // Build role information
         let infoHTML = `<p>${role.description}</p>`;
 
-        // Add special information based on role
-        if (role.knowsSpies && !role.isBlind && !role.isFalseCommander) {
+        // Comandante - shows spies (respecting visibility rules)
+        if (role.key === 'comandante') {
             const spies = GameManager.getSpyInfo(roles, currentPlayer);
-            const otherSpies = spies.filter(s => s.index !== currentPlayer);
+            const visibleSpies = spies.filter(s => s.visibleToCommander);
             
-            if (otherSpies.length > 0) {
+            if (visibleSpies.length > 0) {
                 infoHTML += `
                     <div class="spy-list">
-                        <h3>🔍 ${role.faction === 'spy' ? 'Outros Espiões' : 'Espiões Identificados'}:</h3>
+                        <h3>🔍 Espiões Identificados:</h3>
                         <ul>
-                            ${otherSpies.map(spy => `<li><strong>${spy.playerName}</strong></li>`).join('')}
+                            ${visibleSpies.map(spy => `<li><strong>${spy.playerName}</strong></li>`).join('')}
                         </ul>
                     </div>
                 `;
             }
         }
 
-        // Comandante Falso that knows spies
-        if (role.isFalseCommander && role.knowsSpies) {
+        // Guarda-Costas - shows commander(s)
+        if (role.key === 'guardacostas') {
+            const commanders = GameManager.getCommanderInfo(roles);
+            
+            if (commanders.length > 0) {
+                infoHTML += `
+                    <div class="spy-list">
+                        <h3>👑 Comandante(s) Identificado(s):</h3>
+                        <ul>
+                            ${commanders.map(cmd => `<li><strong>${cmd.playerName}</strong></li>`).join('')}
+                        </ul>
+                `;
+                
+                if (commanders.length > 1) {
+                    infoHTML += `<p class="warning">⚠️ Atenção: Há mais de um comandante! Um deles é falso, mas você não sabe qual.</p>`;
+                }
+                
+                infoHTML += `</div>`;
+            }
+        }
+
+        // Regular spies (not blind, not false commander without knowledge)
+        if (role.knowsSpies && !role.isBlind && role.faction === 'spy') {
             const spies = GameManager.getSpyInfo(roles, currentPlayer);
             const otherSpies = spies.filter(s => s.index !== currentPlayer);
             
@@ -86,6 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        // Blind spy warning
         if (role.isBlind) {
             infoHTML += `
                 <div class="info-box warning">
@@ -94,6 +116,16 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         }
 
+        // Agente Invisível info
+        if (role.key === 'agenteinvisivel') {
+            infoHTML += `
+                <div class="info-box">
+                    <p><strong>👻 Invisibilidade:</strong> O Comandante NÃO consegue ver você!</p>
+                </div>
+            `;
+        }
+
+        // False Commander without knowledge
         if (role.isFalseCommander && !role.knowsSpies) {
             infoHTML += `
                 <div class="info-box warning">
@@ -102,6 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         }
 
+        // Assassino special mission
         if (role.key === 'assassino') {
             infoHTML += `
                 <div class="info-box">
@@ -111,6 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         }
 
+        // Desertor ability
         if (role.isDesertor) {
             infoHTML += `
                 <div class="info-box">

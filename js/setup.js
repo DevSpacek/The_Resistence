@@ -63,12 +63,22 @@ document.addEventListener('DOMContentLoaded', () => {
             if (checkbox.checked) {
                 selectedSpecials.add(checkbox.value);
                 
+                // Show Espião Cego options
+                if (checkbox.value === 'espiaocego') {
+                    document.getElementById('espiaoCegoOptions').style.display = 'block';
+                }
+                
                 // Show Comandante Falso options
                 if (checkbox.value === 'comandantefalso') {
                     document.getElementById('comandanteFalsoOptions').style.display = 'block';
                 }
             } else {
                 selectedSpecials.delete(checkbox.value);
+                
+                // Hide Espião Cego options
+                if (checkbox.value === 'espiaocego') {
+                    document.getElementById('espiaoCegoOptions').style.display = 'none';
+                }
                 
                 // Hide Comandante Falso options
                 if (checkbox.value === 'comandantefalso') {
@@ -127,18 +137,29 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Get options
+        const options = {
+            comandanteFalsoKnows: true,
+            comandanteKnowsBlindSpy: true
+        };
+
         // Get Comandante Falso preference
-        let comandanteFalsoKnows = true;
         if (selectedSpecials.has('comandantefalso')) {
             const selectedOption = document.querySelector('input[name="comandanteFalsoType"]:checked');
-            comandanteFalsoKnows = selectedOption.value === 'knows';
+            options.comandanteFalsoKnows = selectedOption.value === 'knows';
+        }
+
+        // Get Espião Cego preference
+        if (selectedSpecials.has('espiaocego')) {
+            const selectedOption = document.querySelector('input[name="espiaoCegoType"]:checked');
+            options.comandanteKnowsBlindSpy = selectedOption.value === 'commanderKnows';
         }
 
         // Distribute roles
         const roles = GameManager.distributeRoles(
             selectedPlayerCount,
             Array.from(selectedSpecials),
-            comandanteFalsoKnows,
+            options,
             playerNames
         );
 
