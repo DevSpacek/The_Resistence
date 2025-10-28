@@ -77,15 +77,3 @@ Ao revelar cada papel, o sistema mostra automaticamente:
 3. A Resistência vence completando 3 missões
 4. Os Espiões vencem sabotando 3 missões
 5. Se houver Assassino e Comandante, o Assassino pode tentar eliminar o Comandante após 3 missões bem-sucedidas da Resistência
-
-## 🚀 Modo Rede Local (Futuro)
-
-Em desenvolvimento: Modo multiplayer via WiFi local para que cada jogador use seu próprio dispositivo.
-
-## 📄 Licença
-
-Projeto de código aberto para uso pessoal e educacional.
-
----
-
-**Desenvolvido para facilitar partidas de The Resistance sem necessidade de mestre ou procedimentos manuais!**
