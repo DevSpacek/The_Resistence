@@ -14,6 +14,7 @@
         </header>
 
         <main class="setup-screen">
+            <!-- Step 1: Player Count -->
             <section class="config-section">
                 <h2>Número de Jogadores</h2>
                 <div class="player-selector">
@@ -26,6 +27,16 @@
                 </div>
             </section>
 
+            <!-- Step 2: Player Names -->
+            <section class="config-section" id="playerNamesSection" style="display: none;">
+                <h2>Nome dos Jogadores</h2>
+                <p class="info-text">Digite o nome de cada participante:</p>
+                <div id="playerNamesContainer" class="player-names-grid">
+                    <!-- Dynamic inputs will be added here -->
+                </div>
+            </section>
+
+            <!-- Step 3: Special Characters -->
             <section class="config-section">
                 <h2>Personagens Especiais</h2>
                 <p class="info-text">Selecione os personagens que deseja incluir na partida:</p>
@@ -67,23 +78,38 @@
                         </div>
                     </label>
 
-                    <label class="character-option neutral">
-                        <input type="checkbox" id="inquisidor" value="inquisidor">
-                        <div class="character-card">
-                            <h3>⚖️ Inquisidor</h3>
-                            <span class="faction">Qualquer facção</span>
-                            <p>Pode verificar a lealdade de um jogador</p>
-                        </div>
-                    </label>
-
                     <label class="character-option spy">
                         <input type="checkbox" id="comandantefalso" value="comandantefalso">
                         <div class="character-card">
                             <h3>👹 Comandante Falso</h3>
                             <span class="faction">Espião</span>
-                            <p>Parece ser Comandante mas não conhece espiões</p>
+                            <p>Parece ser Comandante</p>
                         </div>
                     </label>
+
+                    <label class="character-option neutral">
+                        <input type="checkbox" id="desertor" value="desertor">
+                        <div class="character-card">
+                            <h3>🔄 Desertor (Par)</h3>
+                            <span class="faction">Ambas facções</span>
+                            <p>1 Resistência + 1 Espião que podem trocar de lado</p>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Comandante Falso Options -->
+                <div id="comandanteFalsoOptions" class="special-options" style="display: none;">
+                    <h3>Opções do Comandante Falso:</h3>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="comandanteFalsoType" value="knows" checked>
+                            <span>Conhece os espiões</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="comandanteFalsoType" value="doesntKnow">
+                            <span>Não conhece os espiões (regra clássica)</span>
+                        </label>
+                    </div>
                 </div>
             </section>
 

@@ -64,6 +64,12 @@ h1 {
     color: var(--text-light);
 }
 
+.config-section h3 {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    color: var(--text-light);
+}
+
 .info-text {
     color: var(--text-muted);
     margin-bottom: 15px;
@@ -98,6 +104,44 @@ h1 {
     background: var(--resistance-color);
     border-color: var(--resistance-color);
     box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4);
+}
+
+/* Player Names */
+.player-names-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.player-name-input {
+    display: flex;
+    flex-direction: column;
+}
+
+.player-name-input label {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+}
+
+.player-name-input input {
+    padding: 12px;
+    font-size: 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: var(--text-light);
+    transition: all 0.3s ease;
+}
+
+.player-name-input input:focus {
+    outline: none;
+    border-color: var(--resistance-color);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.player-name-input input::placeholder {
+    color: var(--text-muted);
 }
 
 /* Characters Grid */
@@ -159,6 +203,45 @@ h1 {
     border-color: var(--success-color);
     background: rgba(76, 175, 80, 0.1);
     box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+}
+
+/* Special Options */
+.special-options {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.radio-option {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.radio-option:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.radio-option input[type="radio"] {
+    margin-right: 10px;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.radio-option span {
+    font-size: 1rem;
 }
 
 /* Game Info */
@@ -379,6 +462,10 @@ h1 {
     }
 
     .characters-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .player-names-grid {
         grid-template-columns: 1fr;
     }
 

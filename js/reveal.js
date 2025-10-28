@@ -8,12 +8,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     let currentPlayer = 0;
-    const { playerCount, roles } = gameState;
+    const { playerCount, roles, playerNames } = gameState;
 
     // Update UI for current player
     function updateUI() {
-        document.getElementById('currentPlayerNum').textContent = currentPlayer + 1;
-        document.getElementById('playerNumber').textContent = currentPlayer + 1;
+        const playerName = roles[currentPlayer].playerName;
+        document.getElementById('currentPlayerNum').textContent = playerName;
+        document.getElementById('playerNumber').textContent = playerName;
     }
 
     // Show privacy screen
@@ -61,7 +62,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="spy-list">
                         <h3>🔍 ${role.faction === 'spy' ? 'Outros Espiões' : 'Espiões Identificados'}:</h3>
                         <ul>
-                            ${otherSpies.map(spy => `<li>Jogador ${spy.playerNum}</li>`).join('')}
+                            ${otherSpies.map(spy => `<li><strong>${spy.playerName}</strong></li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+        }
+
+        // Comandante Falso that knows spies
+        if (role.isFalseCommander && role.knowsSpies) {
+            const spies = GameManager.getSpyInfo(roles, currentPlayer);
+            const otherSpies = spies.filter(s => s.index !== currentPlayer);
+            
+            if (otherSpies.length > 0) {
+                infoHTML += `
+                    <div class="spy-list">
+                        <h3>🔍 Outros Espiões:</h3>
+                        <ul>
+                            ${otherSpies.map(spy => `<li><strong>${spy.playerName}</strong></li>`).join('')}
                         </ul>
                     </div>
                 `;
@@ -76,10 +94,10 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         }
 
-        if (role.isFalseCommander) {
+        if (role.isFalseCommander && !role.knowsSpies) {
             infoHTML += `
                 <div class="info-box warning">
-                    <p><strong>⚠️ Cuidado:</strong> Você parece ser o Comandante, mas é um espião! Os outros espiões não conhecem você.</p>
+                    <p><strong>⚠️ Cuidado:</strong> Você parece ser o Comandante, mas é um espião! Você NÃO conhece os outros espiões.</p>
                 </div>
             `;
         }
@@ -93,11 +111,11 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         }
 
-        if (role.key === 'inquisidor') {
+        if (role.isDesertor) {
             infoHTML += `
                 <div class="info-box">
-                    <h3>🔎 Habilidade Especial:</h3>
-                    <p>Uma vez durante o jogo, você pode verificar secretamente a lealdade de um jogador.</p>
+                    <h3>🔄 Habilidade Especial:</h3>
+                    <p>Você pode trocar de lado durante o jogo. Use esta habilidade estrategicamente!</p>
                 </div>
             `;
         }

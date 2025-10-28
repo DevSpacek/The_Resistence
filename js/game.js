@@ -18,6 +18,14 @@ const GameManager = {
             isSpecial: true,
             description: 'Você protege o Comandante da Resistência.'
         },
+        desertorResistencia: {
+            name: 'Desertor',
+            displayName: '🔄 Desertor',
+            faction: 'resistance',
+            isSpecial: true,
+            isDesertor: true,
+            description: 'Você está na Resistência, mas pode trocar de lado durante o jogo.'
+        },
         // Spy characters
         assassino: {
             name: 'Assassino',
@@ -41,15 +49,17 @@ const GameManager = {
             faction: 'spy',
             isSpecial: true,
             isFalseCommander: true,
-            description: 'Você parece ser o Comandante, mas é um espião! Não conhece os outros espiões.'
+            knowsSpies: false, // Will be set based on user choice
+            description: 'Você parece ser o Comandante, mas é um espião!'
         },
-        // Neutral (can be either faction)
-        inquisidor: {
-            name: 'Inquisidor',
-            displayName: '⚖️ Inquisidor',
-            faction: null, // Will be assigned
+        desertorEspiao: {
+            name: 'Desertor',
+            displayName: '🔄 Desertor',
+            faction: 'spy',
             isSpecial: true,
-            description: 'Você pode verificar a lealdade de um jogador durante o jogo.'
+            isDesertor: true,
+            knowsSpies: true,
+            description: 'Você é um espião, mas pode trocar de lado durante o jogo.'
         }
     },
 
@@ -61,7 +71,7 @@ const GameManager = {
     },
 
     // Distribute roles to players
-    distributeRoles(playerCount, selectedSpecials) {
+    distributeRoles(playerCount, selectedSpecials, comandanteFalsoKnows, playerNames) {
         const spyCount = this.getSpyCount(playerCount);
         const resistanceCount = playerCount - spyCount;
         
@@ -73,17 +83,30 @@ const GameManager = {
 
         // Process selected special characters
         selectedSpecials.forEach(specialKey => {
-            const char = this.characters[specialKey];
-            
-            if (specialKey === 'inquisidor') {
-                // Inquisidor can be either faction - decide randomly
-                const faction = Math.random() < 0.5 ? 'resistance' : 'spy';
-                specialsUsed[faction].push({
+            if (specialKey === 'comandantefalso') {
+                const char = { ...this.characters.comandantefalso };
+                char.knowsSpies = comandanteFalsoKnows;
+                if (!comandanteFalsoKnows) {
+                    char.description = 'Você parece ser o Comandante, mas é um espião! Não conhece os outros espiões.';
+                } else {
+                    char.description = 'Você parece ser o Comandante, mas é um espião! Você conhece os outros espiões.';
+                }
+                specialsUsed.spy.push({
                     ...char,
-                    faction: faction,
                     key: specialKey
                 });
+            } else if (specialKey === 'desertor') {
+                // Add both desertor types
+                specialsUsed.resistance.push({
+                    ...this.characters.desertorResistencia,
+                    key: 'desertorResistencia'
+                });
+                specialsUsed.spy.push({
+                    ...this.characters.desertorEspiao,
+                    key: 'desertorEspiao'
+                });
             } else {
+                const char = this.characters[specialKey];
                 specialsUsed[char.faction].push({
                     ...char,
                     key: specialKey
@@ -133,7 +156,15 @@ const GameManager = {
         }
 
         // Shuffle roles
-        return this.shuffleArray(roles);
+        const shuffledRoles = this.shuffleArray(roles);
+        
+        // Assign player names
+        shuffledRoles.forEach((role, index) => {
+            role.playerName = playerNames[index] || `Jogador ${index + 1}`;
+            role.playerIndex = index;
+        });
+
+        return shuffledRoles;
     },
 
     // Fisher-Yates shuffle
@@ -154,6 +185,7 @@ const GameManager = {
                 spies.push({
                     index: index,
                     name: role.displayName,
+                    playerName: role.playerName,
                     playerNum: index + 1
                 });
             }
@@ -162,10 +194,11 @@ const GameManager = {
     },
 
     // Save game state
-    saveGame(playerCount, roles) {
+    saveGame(playerCount, roles, playerNames) {
         const gameState = {
             playerCount: playerCount,
             roles: roles,
+            playerNames: playerNames,
             currentPlayer: 0,
             timestamp: Date.now()
         };
