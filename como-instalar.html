@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Como Instalar - The Resistance</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+            color: #ffffff;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(74, 144, 226, 0.5);
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 1.1rem;
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        h2 {
+            color: #4a90e2;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            border-bottom: 2px solid rgba(74, 144, 226, 0.3);
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            color: #27ae60;
+            margin: 20px 0 15px 0;
+            font-size: 1.4rem;
+        }
+
+        .steps {
+            list-style: none;
+            counter-reset: step-counter;
+        }
+
+        .steps li {
+            counter-increment: step-counter;
+            margin-bottom: 20px;
+            padding-left: 50px;
+            position: relative;
+        }
+
+        .steps li::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            background: linear-gradient(135deg, #4a90e2, #2d5a8f);
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 15px rgba(74, 144, 226, 0.4);
+        }
+
+        .feature-list {
+            list-style: none;
+        }
+
+        .feature-list li {
+            padding: 12px;
+            margin: 10px 0;
+            background: rgba(39, 174, 96, 0.1);
+            border-left: 4px solid #27ae60;
+            border-radius: 5px;
+        }
+
+        .warning {
+            background: rgba(243, 156, 18, 0.15);
+            border: 2px solid #f39c12;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .warning strong {
+            color: #f39c12;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #4a90e2, #2d5a8f);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            margin: 10px 10px 10px 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(74, 144, 226, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(74, 144, 226, 0.6);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.4);
+        }
+
+        .btn-success:hover {
+            box-shadow: 0 6px 20px rgba(39, 174, 96, 0.6);
+        }
+
+        .emoji {
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #888;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .section {
+                padding: 20px;
+            }
+
+            .steps li {
+                padding-left: 45px;
+            }
+
+            .steps li::before {
+                width: 30px;
+                height: 30px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🎭 The Resistance</h1>
+            <p class="subtitle">Guia de Instalação do App Mobile</p>
+        </header>
+
+        <div class="section">
+            <h2><span class="emoji">✨</span>Características do App</h2>
+            <ul class="feature-list">
+                <li>✅ <strong>Instalável</strong> - Funciona como app nativo no celular</li>
+                <li>✅ <strong>Offline</strong> - Não precisa de internet para jogar</li>
+                <li>✅ <strong>Rápido</strong> - Carregamento instantâneo</li>
+                <li>✅ <strong>Otimizado</strong> - Interface perfeita para touch screen</li>
+                <li>✅ <strong>Privado</strong> - Todos os dados ficam no seu dispositivo</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2><span class="emoji">📱</span>Como Instalar no Android</h2>
+            <h3>Método 1: Botão de Instalação</h3>
+            <ol class="steps">
+                <li>Abra o app no navegador <strong>Chrome</strong> ou <strong>Edge</strong></li>
+                <li>Procure o botão <strong>"📱 Instalar App"</strong> no topo da página</li>
+                <li>Clique nele e confirme a instalação</li>
+                <li>O app aparecerá na tela inicial do seu celular!</li>
+            </ol>
+
+            <h3>Método 2: Menu do Navegador</h3>
+            <ol class="steps">
+                <li>Abra o app no Chrome</li>
+                <li>Toque nos <strong>três pontos</strong> (⋮) no canto superior direito</li>
+                <li>Selecione <strong>"Adicionar à tela inicial"</strong></li>
+                <li>Confirme o nome e toque em <strong>"Adicionar"</strong></li>
+            </ol>
+
+            <div class="warning">
+                <strong>⚠️ Importante:</strong> Use Chrome ou Edge para melhor experiência. Outros navegadores podem não
+                suportar a instalação completa.
+            </div>
+        </div>
+
+        <div class="section">
+            <h2><span class="emoji">🍎</span>Como Instalar no iOS (iPhone/iPad)</h2>
+            <ol class="steps">
+                <li>Abra o app no navegador <strong>Safari</strong></li>
+                <li>Toque no botão <strong>Compartilhar</strong> (□↑) na barra inferior</li>
+                <li>Role a lista para baixo</li>
+                <li>Toque em <strong>"Adicionar à Tela de Início"</strong></li>
+                <li>Confirme o nome e toque em <strong>"Adicionar"</strong></li>
+                <li>O app aparecerá na tela inicial!</li>
+            </ol>
+
+            <div class="warning">
+                <strong>⚠️ Importante:</strong> No iOS, use exclusivamente o Safari. Chrome e outros navegadores não
+                suportam instalação de PWA no iOS.
+            </div>
+        </div>
+
+        <div class="section">
+            <h2><span class="emoji">🎮</span>Como Usar o App</h2>
+            <ol class="steps">
+                <li><strong>Configure o Jogo:</strong> Escolha o número de jogadores e personagens especiais</li>
+                <li><strong>Digite os Nomes:</strong> Personalize com os nomes dos jogadores</li>
+                <li><strong>Inicie o Jogo:</strong> O app distribui os papéis automaticamente</li>
+                <li><strong>Revelação Privada:</strong> Passe o celular para cada jogador ver seu papel</li>
+                <li><strong>Jogue:</strong> Use as cartas físicas normalmente - o app só distribui os papéis!</li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <h2><span class="emoji">💾</span>Histórico e Configurações</h2>
+            <ul class="feature-list">
+                <li>O app salva automaticamente sua última configuração</li>
+                <li>Use <strong>"📋 Carregar Última Configuração"</strong> para repetir uma partida</li>
+                <li>Use <strong>"🗑️ Limpar Histórico"</strong> para apagar dados salvos</li>
+                <li>Todos os dados ficam apenas no seu dispositivo (LocalStorage)</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2><span class="emoji">🎯</span>Personagens Disponíveis</h2>
+            <h3>Resistência (Azul)</h3>
+            <ul class="feature-list">
+                <li>👑 <strong>Comandante</strong> - Conhece todos os espiões</li>
+                <li>🛡️ <strong>Guarda-Costas</strong> - Conhece o Comandante e deve protegê-lo</li>
+                <li>🔄 <strong>Desertor</strong> - Pode trocar de lado durante o jogo</li>
+            </ul>
+
+            <h3>Espiões (Vermelho)</h3>
+            <ul class="feature-list">
+                <li>🗡️ <strong>Assassino</strong> - Pode eliminar o Comandante ao final</li>
+                <li>👁️ <strong>Espião Cego</strong> - Não conhece outros espiões</li>
+                <li>👻 <strong>Agente Invisível</strong> - Invisível ao Comandante</li>
+                <li>👹 <strong>Comandante Falso</strong> - Engana o Guarda-Costas</li>
+                <li>🔄 <strong>Desertor</strong> - Pode trocar de lado durante o jogo</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2><span class="emoji">❓</span>Problemas Comuns</h2>
+
+            <h3>O botão "Instalar App" não aparece?</h3>
+            <ul class="feature-list">
+                <li>Verifique se está usando Chrome/Edge (Android) ou Safari (iOS)</li>
+                <li>O app pode já estar instalado - verifique sua tela inicial</li>
+                <li>Tente o método alternativo do menu do navegador</li>
+            </ul>
+
+            <h3>App não funciona offline?</h3>
+            <ul class="feature-list">
+                <li>Abra o app pelo menos uma vez com internet</li>
+                <li>O cache precisa ser baixado na primeira vez</li>
+                <li>Após isso, funcionará 100% offline</li>
+            </ul>
+
+            <h3>Interface está estranha no celular?</h3>
+            <ul class="feature-list">
+                <li>Instale como app nativo para melhor experiência</li>
+                <li>Certifique-se de estar com a versão mais recente</li>
+                <li>Tente limpar o cache e recarregar</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin: 40px 0;">
+            <a href="index.html" class="btn btn-success">
+                🎮 Começar a Jogar
+            </a>
+            <a href="generate-icons.html" class="btn">
+                🎨 Gerar Ícones
+            </a>
+        </div>
+
+        <footer>
+            <p><strong>The Resistance</strong> - App Mobile PWA</p>
+            <p style="margin-top: 10px;">Desenvolvido para facilitar suas partidas em dispositivos móveis</p>
+            <p style="margin-top: 20px; font-size: 0.9em;">
+                💡 <em>Dica: Após instalar, você pode fechar o navegador e usar o app direto da tela inicial!</em>
+            </p>
+        </footer>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerar Ícones - The Resistance</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #0a0a0a;
+            color: white;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .icon-canvas {
+            margin: 20px;
+        }
+
+        canvas {
+            border: 2px solid #4a90e2;
+            border-radius: 10px;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            background: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px;
+        }
+
+        button:hover {
+            background: #3a72b8;
+        }
+
+        .info {
+            text-align: center;
+            max-width: 600px;
+            margin: 20px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🎭 Gerador de Ícones - The Resistance</h1>
+
+    <div class="info">
+        <p>Clique nos botões abaixo para baixar os ícones necessários para o aplicativo PWA.</p>
+        <p>Salve-os na pasta raiz do projeto com os nomes corretos.</p>
+    </div>
+
+    <div class="icon-canvas">
+        <h3>Ícone 192x192</h3>
+        <canvas id="icon192" width="192" height="192"></canvas>
+        <br>
+        <button onclick="downloadIcon('icon192', 'icon-192.png')">Baixar 192x192</button>
+    </div>
+
+    <div class="icon-canvas">
+        <h3>Ícone 512x512</h3>
+        <canvas id="icon512" width="512" height="512"></canvas>
+        <br>
+        <button onclick="downloadIcon('icon512', 'icon-512.png')">Baixar 512x512</button>
+    </div>
+
+    <script>
+        function drawIcon(canvasId, size) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+
+            // Background gradient
+            const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+            gradient.addColorStop(0, '#2d5a8f');
+            gradient.addColorStop(1, '#1a1a1a');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+
+            // Circle border
+            ctx.strokeStyle = '#4a90e2';
+            ctx.lineWidth = size * 0.05;
+            ctx.beginPath();
+            ctx.arc(size / 2, size / 2, size * 0.4, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Mask emoji
+            ctx.font = `bold ${size * 0.5}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText('🎭', size / 2, size / 2);
+        }
+
+        function downloadIcon(canvasId, filename) {
+            const canvas = document.getElementById(canvasId);
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // Draw icons on load
+        drawIcon('icon192', 192);
+        drawIcon('icon512', 512);
+    </script>
+</body>
+
+</html>

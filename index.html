@@ -1,16 +1,37 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Aplicativo para gerenciar partidas do jogo The Resistance">
+    <meta name="theme-color" content="#4a90e2">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="The Resistance">
     <title>The Resistance - Configuração</title>
+    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <div class="container">
         <header>
             <h1>🎭 The Resistance</h1>
             <p class="subtitle">Configure sua partida</p>
+            <button class="btn-install" id="btnInstall" style="display: none;">
+                📱 Instalar App
+            </button>
+            <div style="margin-top: 10px;">
+                <a href="como-instalar.html" class="btn-help"
+                    style="display: inline-block; color: #4a90e2; text-decoration: none; font-size: 0.9rem; margin-right: 15px;">
+                    ❓ Como instalar no celular
+                </a>
+                <a href="diagnostico-pwa.html" class="btn-help"
+                    style="display: inline-block; color: #27ae60; text-decoration: none; font-size: 0.9rem;">
+                    🔍 Diagnóstico PWA
+                </a>
+            </div>
         </header>
 
         <main class="setup-screen">
@@ -53,7 +74,7 @@
             <section class="config-section">
                 <h2>Personagens Especiais</h2>
                 <p class="info-text">Selecione os personagens que deseja incluir na partida:</p>
-                
+
                 <div class="characters-grid">
                     <label class="character-option resistance">
                         <input type="checkbox" id="comandante" value="comandante">
@@ -147,7 +168,8 @@
                             <span>Desertores se conhecem (para muitos jogadores)</span>
                         </label>
                     </div>
-                    <p class="info-text">⚠️ Baralho de Troca de Lealdade deve ser usado fisicamente (não implementado no app)</p>
+                    <p class="info-text">⚠️ Baralho de Troca de Lealdade deve ser usado fisicamente (não implementado no
+                        app)</p>
                 </div>
             </section>
 
@@ -163,5 +185,95 @@
 
     <script src="js/game.js"></script>
     <script src="js/setup.js"></script>
+    <script>
+        // PWA Installation
+        let deferredPrompt;
+        const installButton = document.getElementById('btnInstall');
+
+        // Check if already installed
+        function isAppInstalled() {
+            // Check if running in standalone mode (already installed)
+            if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+                return true;
+            }
+            return false;
+        }
+
+        // Show button on load if PWA is supported but not installed
+        window.addEventListener('load', () => {
+            // If already installed, hide button
+            if (isAppInstalled()) {
+                console.log('App já está instalado');
+                installButton.style.display = 'none';
+                return;
+            }
+
+            // For debugging - show install status
+            console.log('PWA Status:', {
+                isStandalone: window.matchMedia('(display-mode: standalone)').matches,
+                hasServiceWorker: 'serviceWorker' in navigator,
+                protocol: window.location.protocol,
+                isLocalhost: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            });
+
+            // Show button if HTTPS or localhost (where PWA works)
+            if (window.location.protocol === 'https:' ||
+                window.location.hostname === 'localhost' ||
+                window.location.hostname === '127.0.0.1') {
+
+                // Check if on mobile
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+                if (isMobile) {
+                    // On mobile, wait for beforeinstallprompt or show manual instructions
+                    console.log('Mobile detectado - aguardando beforeinstallprompt');
+                }
+            }
+        });
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('beforeinstallprompt disparado!');
+            e.preventDefault();
+            deferredPrompt = e;
+            installButton.style.display = 'inline-block';
+        });
+
+        installButton.addEventListener('click', async () => {
+            if (!deferredPrompt) {
+                console.log('Sem deferredPrompt - mostrando instruções manuais');
+                // Redirect to instructions page
+                window.location.href = 'como-instalar.html';
+                return;
+            }
+
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`Escolha do usuário: ${outcome}`);
+            deferredPrompt = null;
+
+            if (outcome === 'accepted') {
+                installButton.style.display = 'none';
+            }
+        });
+
+        window.addEventListener('appinstalled', () => {
+            console.log('PWA instalado com sucesso!');
+            installButton.style.display = 'none';
+        });
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./service-worker.js')
+                .then(reg => {
+                    console.log('Service Worker registrado com sucesso:', reg.scope);
+                })
+                .catch(err => {
+                    console.error('Erro ao registrar Service Worker:', err);
+                });
+        } else {
+            console.log('Service Worker não suportado neste navegador');
+        }
+    </script>
 </body>
+
 </html>

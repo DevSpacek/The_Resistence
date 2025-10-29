@@ -2,6 +2,16 @@
 	margin: 0;
 	padding: 0;
 	box-sizing: border-box;
+	-webkit-tap-highlight-color: transparent;
+	-webkit-touch-callout: none;
+	user-select: none;
+	-webkit-user-select: none;
+}
+
+input,
+textarea {
+	user-select: text;
+	-webkit-user-select: text;
 }
 
 :root {
@@ -24,6 +34,12 @@
 	);
 }
 
+html {
+	-webkit-text-size-adjust: 100%;
+	-ms-text-size-adjust: 100%;
+	touch-action: manipulation;
+}
+
 body {
 	font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 	background: radial-gradient(
@@ -34,9 +50,11 @@ body {
 	background-attachment: fixed;
 	color: var(--text-light);
 	min-height: 100vh;
-	padding: 20px;
+	min-height: -webkit-fill-available;
+	padding: 10px;
 	line-height: 1.6;
 	position: relative;
+	overflow-x: hidden;
 }
 
 body::before {
@@ -75,6 +93,32 @@ body::before {
 header {
 	text-align: center;
 	margin-bottom: 30px;
+}
+
+.btn-install {
+	display: inline-block;
+	margin-top: 15px;
+	padding: 12px 24px;
+	font-size: 1rem;
+	font-weight: bold;
+	background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+	color: white;
+	border: none;
+	border-radius: 8px;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	box-shadow: 0 4px 15px rgba(39, 174, 96, 0.4);
+	touch-action: manipulation;
+}
+
+.btn-install:hover {
+	background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+	transform: translateY(-2px);
+	box-shadow: 0 6px 20px rgba(39, 174, 96, 0.6);
+}
+
+.btn-install:active {
+	transform: scale(0.98);
 }
 
 h1 {
@@ -151,6 +195,12 @@ h1 {
 	cursor: pointer;
 	transition: all 0.3s ease;
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.btn-player:active {
+	transform: scale(0.95);
 }
 
 .btn-player:hover {
@@ -431,6 +481,12 @@ h1 {
 	box-shadow: 0 4px 20px rgba(74, 144, 226, 0.4), 0 2px 8px rgba(0, 0, 0, 0.6);
 	position: relative;
 	overflow: hidden;
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.btn-primary:active:not(:disabled) {
+	transform: scale(0.98);
 }
 
 .btn-primary::before {
@@ -763,24 +819,118 @@ h1 {
 
 /* Responsive */
 @media (max-width: 480px) {
+	body {
+		padding: 8px;
+	}
+
 	h1 {
-		font-size: 2rem;
+		font-size: 1.8rem;
+		margin-bottom: 8px;
+	}
+
+	.subtitle {
+		font-size: 0.95rem;
+	}
+
+	.setup-screen {
+		padding: 15px;
+	}
+
+	.config-section h2 {
+		font-size: 1.3rem;
 	}
 
 	.player-selector {
 		grid-template-columns: repeat(2, 1fr);
+		gap: 8px;
+	}
+
+	.btn-player {
+		padding: 12px;
+		font-size: 1.1rem;
 	}
 
 	.characters-grid {
 		grid-template-columns: 1fr;
+		gap: 12px;
+	}
+
+	.character-card {
+		padding: 15px;
 	}
 
 	.player-names-grid {
 		grid-template-columns: 1fr;
+		gap: 12px;
 	}
 
 	.role-icon {
 		font-size: 3rem;
+	}
+
+	.role-card {
+		min-height: 450px;
+		padding: 20px;
+	}
+
+	.role-title {
+		font-size: 1.4rem;
+	}
+
+	.faction-badge {
+		font-size: 0.85rem;
+		padding: 6px 14px;
+	}
+
+	.btn-primary {
+		padding: 15px;
+		font-size: 1.1rem;
+		letter-spacing: 1px;
+	}
+
+	.privacy-content {
+		padding: 25px 20px;
+	}
+
+	.privacy-content h2 {
+		font-size: 1.8rem;
+	}
+
+	.player-indicator {
+		font-size: 1.3rem;
+	}
+
+	.player-indicator span {
+		font-size: 2rem;
+	}
+}
+
+/* Landscape mode for small screens */
+@media (max-height: 600px) and (orientation: landscape) {
+	.role-card {
+		min-height: 350px;
+		padding: 15px;
+	}
+
+	.role-title {
+		font-size: 1.3rem;
+		margin-bottom: 10px;
+	}
+
+	.faction-badge {
+		padding: 6px 14px;
+		font-size: 0.9rem;
+		margin-bottom: 10px;
+	}
+
+	.role-info h3 {
+		font-size: 1.1rem;
+		margin-bottom: 8px;
+	}
+
+	.role-info p {
+		font-size: 0.9rem;
+		margin-bottom: 8px;
 	}
 }
 

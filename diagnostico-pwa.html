@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico PWA - The Resistance</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #00ff00;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #1a1a1a;
+            padding: 30px;
+            border-radius: 10px;
+            border: 2px solid #00ff00;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #0a0a0a;
+            border-left: 4px solid #00ff00;
+        }
+
+        .section h2 {
+            color: #00ff00;
+            margin-bottom: 10px;
+        }
+
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+
+        .status.success {
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid #00ff00;
+        }
+
+        .status.error {
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid #ff0000;
+            color: #ff0000;
+        }
+
+        .status.warning {
+            background: rgba(255, 165, 0, 0.1);
+            border: 1px solid #ffa500;
+            color: #ffa500;
+        }
+
+        pre {
+            background: #000;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            color: #00ff00;
+            font-size: 0.9em;
+        }
+
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 10px 5px;
+            font-size: 1rem;
+        }
+
+        button:hover {
+            background: #00cc00;
+        }
+
+        .icon {
+            margin-right: 5px;
+        }
+
+        a {
+            color: #00ff00;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔍 Diagnóstico PWA - The Resistance</h1>
+
+        <div class="section">
+            <h2>📱 Status do Navegador</h2>
+            <div id="browserInfo"></div>
+        </div>
+
+        <div class="section">
+            <h2>🌐 Protocolo e URL</h2>
+            <div id="protocolInfo"></div>
+        </div>
+
+        <div class="section">
+            <h2>⚙️ Service Worker</h2>
+            <div id="serviceWorkerInfo"></div>
+        </div>
+
+        <div class="section">
+            <h2>📋 Manifest</h2>
+            <div id="manifestInfo"></div>
+        </div>
+
+        <div class="section">
+            <h2>🎯 beforeinstallprompt</h2>
+            <div id="installPromptInfo"></div>
+        </div>
+
+        <div class="section">
+            <h2>💾 Cache Storage</h2>
+            <div id="cacheInfo"></div>
+        </div>
+
+        <div class="section">
+            <h2>📦 Status de Instalação</h2>
+            <div id="installStatus"></div>
+        </div>
+
+        <div class="section">
+            <h2>🛠️ Ações</h2>
+            <button onclick="refreshDiagnostics()">🔄 Atualizar Diagnóstico</button>
+            <button onclick="registerSW()">📝 Registrar Service Worker</button>
+            <button onclick="unregisterSW()">❌ Desregistrar Service Worker</button>
+            <button onclick="clearCache()">🗑️ Limpar Cache</button>
+            <button onclick="window.location.href='index.html'">🏠 Voltar ao App</button>
+        </div>
+
+        <div class="section">
+            <h2>💡 Recomendações</h2>
+            <div id="recommendations"></div>
+        </div>
+    </div>
+
+    <script>
+        let deferredPrompt = null;
+        let hasBeforeInstallPrompt = false;
+
+        // Capture beforeinstallprompt
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('beforeinstallprompt capturado!');
+            hasBeforeInstallPrompt = true;
+            deferredPrompt = e;
+            runDiagnostics();
+        });
+
+        function runDiagnostics() {
+            checkBrowser();
+            checkProtocol();
+            checkServiceWorker();
+            checkManifest();
+            checkInstallPrompt();
+            checkCache();
+            checkInstallStatus();
+            generateRecommendations();
+        }
+
+        function checkBrowser() {
+            const userAgent = navigator.userAgent;
+            const isChrome = /Chrome/.test(userAgent) && /Google Inc/.test(navigator.vendor);
+            const isEdge = /Edg/.test(userAgent);
+            const isSafari = /Safari/.test(userAgent) && !/Chrome/.test(userAgent);
+            const isFirefox = /Firefox/.test(userAgent);
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+
+            let html = `
+                <div class="status ${isChrome || isEdge ? 'success' : 'warning'}">
+                    <strong>Navegador:</strong> ${userAgent.split(' ').slice(-2).join(' ')}<br>
+                    <strong>Chrome/Edge:</strong> ${isChrome || isEdge ? '✅ Sim' : '❌ Não'}<br>
+                    <strong>Safari:</strong> ${isSafari ? '✅ Sim' : '❌ Não'}<br>
+                    <strong>Firefox:</strong> ${isFirefox ? '✅ Sim' : '❌ Não'}<br>
+                    <strong>Mobile:</strong> ${isMobile ? '✅ Sim' : '❌ Não'}
+                </div>
+            `;
+
+            document.getElementById('browserInfo').innerHTML = html;
+        }
+
+        function checkProtocol() {
+            const protocol = window.location.protocol;
+            const hostname = window.location.hostname;
+            const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+            const isHTTPS = protocol === 'https:';
+            const isValid = isHTTPS || isLocalhost;
+
+            let html = `
+                <div class="status ${isValid ? 'success' : 'error'}">
+                    <strong>Protocolo:</strong> ${protocol}<br>
+                    <strong>Host:</strong> ${hostname}<br>
+                    <strong>URL Completa:</strong> ${window.location.href}<br>
+                    <strong>PWA Compatível:</strong> ${isValid ? '✅ Sim (HTTPS ou localhost)' : '❌ Não (requer HTTPS)'}
+                </div>
+            `;
+
+            if (!isValid) {
+                html += `
+                    <div class="status error">
+                        <strong>⚠️ PROBLEMA:</strong> PWA requer HTTPS ou localhost. Você está em HTTP.
+                        <br><strong>Solução:</strong> Use um servidor HTTPS (GitHub Pages, Netlify, Vercel) ou localhost.
+                    </div>
+                `;
+            }
+
+            document.getElementById('protocolInfo').innerHTML = html;
+        }
+
+        async function checkServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                try {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    const hasRegistration = registrations.length > 0;
+
+                    let html = `
+                        <div class="status ${hasRegistration ? 'success' : 'warning'}">
+                            <strong>Suporte:</strong> ✅ Sim<br>
+                            <strong>Registrado:</strong> ${hasRegistration ? '✅ Sim' : '❌ Não'}<br>
+                            <strong>Total de Registros:</strong> ${registrations.length}
+                        </div>
+                    `;
+
+                    if (hasRegistration) {
+                        registrations.forEach((reg, i) => {
+                            html += `
+                                <div class="status success">
+                                    <strong>Registro ${i + 1}:</strong><br>
+                                    Scope: ${reg.scope}<br>
+                                    Estado: ${reg.active ? '✅ Ativo' : reg.installing ? '⏳ Instalando' : '❌ Inativo'}
+                                </div>
+                            `;
+                        });
+                    }
+
+                    document.getElementById('serviceWorkerInfo').innerHTML = html;
+                } catch (error) {
+                    document.getElementById('serviceWorkerInfo').innerHTML = `
+                        <div class="status error">
+                            Erro ao verificar Service Worker: ${error.message}
+                        </div>
+                    `;
+                }
+            } else {
+                document.getElementById('serviceWorkerInfo').innerHTML = `
+                    <div class="status error">
+                        ❌ Service Worker não é suportado neste navegador
+                    </div>
+                `;
+            }
+        }
+
+        async function checkManifest() {
+            try {
+                const response = await fetch('manifest.json');
+                const manifest = await response.json();
+
+                document.getElementById('manifestInfo').innerHTML = `
+                    <div class="status success">
+                        <strong>✅ Manifest encontrado</strong><br>
+                        Nome: ${manifest.name}<br>
+                        Nome Curto: ${manifest.short_name}<br>
+                        Display: ${manifest.display}<br>
+                        Theme Color: ${manifest.theme_color}<br>
+                        Ícones: ${manifest.icons ? manifest.icons.length : 0}
+                    </div>
+                    <pre>${JSON.stringify(manifest, null, 2)}</pre>
+                `;
+            } catch (error) {
+                document.getElementById('manifestInfo').innerHTML = `
+                    <div class="status error">
+                        ❌ Erro ao carregar manifest.json: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function checkInstallPrompt() {
+            let html = `
+                <div class="status ${hasBeforeInstallPrompt ? 'success' : 'warning'}">
+                    <strong>beforeinstallprompt capturado:</strong> ${hasBeforeInstallPrompt ? '✅ Sim' : '❌ Não'}<br>
+                    <strong>Prompt disponível:</strong> ${deferredPrompt ? '✅ Sim' : '❌ Não'}
+                </div>
+            `;
+
+            if (!hasBeforeInstallPrompt) {
+                html += `
+                    <div class="status warning">
+                        <strong>ℹ️ O evento beforeinstallprompt pode não disparar porque:</strong><br>
+                        • O app já está instalado<br>
+                        • Você está em um navegador que não suporta PWA<br>
+                        • Não está em HTTPS (exceto localhost)<br>
+                        • O manifest ou service worker tem problemas<br>
+                        • Os critérios de instalação do Chrome não foram atendidos
+                    </div>
+                `;
+            }
+
+            document.getElementById('installPromptInfo').innerHTML = html;
+        }
+
+        async function checkCache() {
+            if ('caches' in window) {
+                try {
+                    const cacheNames = await caches.keys();
+
+                    let html = `
+                        <div class="status ${cacheNames.length > 0 ? 'success' : 'warning'}">
+                            <strong>Suporte:</strong> ✅ Sim<br>
+                            <strong>Caches Encontrados:</strong> ${cacheNames.length}
+                        </div>
+                    `;
+
+                    if (cacheNames.length > 0) {
+                        for (const name of cacheNames) {
+                            const cache = await caches.open(name);
+                            const keys = await cache.keys();
+                            html += `
+                                <div class="status success">
+                                    <strong>Cache: ${name}</strong><br>
+                                    Itens: ${keys.length}
+                                </div>
+                            `;
+                        }
+                    }
+
+                    document.getElementById('cacheInfo').innerHTML = html;
+                } catch (error) {
+                    document.getElementById('cacheInfo').innerHTML = `
+                        <div class="status error">
+                            Erro ao verificar cache: ${error.message}
+                        </div>
+                    `;
+                }
+            } else {
+                document.getElementById('cacheInfo').innerHTML = `
+                    <div class="status error">
+                        ❌ Cache API não é suportada
+                    </div>
+                `;
+            }
+        }
+
+        function checkInstallStatus() {
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                window.navigator.standalone === true;
+
+            document.getElementById('installStatus').innerHTML = `
+                <div class="status ${isStandalone ? 'success' : 'warning'}">
+                    <strong>App Instalado:</strong> ${isStandalone ? '✅ Sim (rodando como app)' : '❌ Não (rodando no navegador)'}<br>
+                    <strong>Display Mode:</strong> ${window.matchMedia('(display-mode: standalone)').matches ? 'Standalone' : 'Browser'}
+                </div>
+            `;
+        }
+
+        function generateRecommendations() {
+            let recommendations = [];
+
+            // Check protocol
+            if (window.location.protocol !== 'https:' &&
+                window.location.hostname !== 'localhost' &&
+                window.location.hostname !== '127.0.0.1') {
+                recommendations.push('⚠️ <strong>Use HTTPS:</strong> Publique o app em GitHub Pages, Netlify ou Vercel para ter HTTPS grátis');
+            }
+
+            // Check if installed
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+            if (isStandalone) {
+                recommendations.push('✅ App já está instalado e rodando em modo standalone');
+            }
+
+            // Check beforeinstallprompt
+            if (!hasBeforeInstallPrompt && !isStandalone) {
+                recommendations.push('💡 O botão de instalação automática pode não aparecer. Use o método manual do navegador');
+            }
+
+            // Browser specific
+            const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+            if (isSafari) {
+                recommendations.push('🍎 <strong>Safari/iOS:</strong> Use "Compartilhar" → "Adicionar à Tela de Início"');
+            }
+
+            const isChrome = /Chrome/.test(navigator.userAgent);
+            if (isChrome && !isStandalone) {
+                recommendations.push('🔵 <strong>Chrome:</strong> Menu (⋮) → "Instalar app" ou "Adicionar à tela inicial"');
+            }
+
+            if (recommendations.length === 0) {
+                recommendations.push('✅ Tudo parece OK! Se o botão não aparecer, use o método manual do navegador.');
+            }
+
+            document.getElementById('recommendations').innerHTML = recommendations.map(r => `<div class="status warning">${r}</div>`).join('');
+        }
+
+        function refreshDiagnostics() {
+            runDiagnostics();
+            alert('✅ Diagnóstico atualizado!');
+        }
+
+        async function registerSW() {
+            if ('serviceWorker' in navigator) {
+                try {
+                    const registration = await navigator.serviceWorker.register('./service-worker.js');
+                    alert('✅ Service Worker registrado com sucesso!');
+                    runDiagnostics();
+                } catch (error) {
+                    alert('❌ Erro ao registrar Service Worker: ' + error.message);
+                }
+            } else {
+                alert('❌ Service Worker não é suportado');
+            }
+        }
+
+        async function unregisterSW() {
+            if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                for (const reg of registrations) {
+                    await reg.unregister();
+                }
+                alert('✅ Service Workers desregistrados!');
+                runDiagnostics();
+            }
+        }
+
+        async function clearCache() {
+            if ('caches' in window) {
+                const cacheNames = await caches.keys();
+                for (const name of cacheNames) {
+                    await caches.delete(name);
+                }
+                alert('✅ Cache limpo!');
+                runDiagnostics();
+            }
+        }
+
+        // Run diagnostics on load
+        window.addEventListener('load', runDiagnostics);
+    </script>
+</body>
+
+</html>
