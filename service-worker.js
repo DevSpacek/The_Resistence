@@ -1,10 +1,10 @@
-const CACHE_NAME = "the-resistance-v1";
+const CACHE_NAME = "the-resistance-v2"; // Versão atualizada para forçar renovação
 
 // Detecta automaticamente o caminho base (funciona com GitHub Pages e localhost)
 const getBasePath = () => {
 	const path = self.location.pathname;
 	const match = path.match(/^\/[^\/]+\//);
-	return match ? match[0] : '/';
+	return match ? match[0] : "/";
 };
 
 const BASE_PATH = getBasePath();
@@ -22,7 +22,7 @@ const urlsToCache = [
 
 // Install Service Worker
 self.addEventListener("install", (event) => {
-	console.log("[Service Worker] Instalando...");
+	console.log("[Service Worker] Instalando v2...");
 	console.log("[Service Worker] Base Path:", BASE_PATH);
 	console.log("[Service Worker] URLs para cache:", urlsToCache);
 	event.waitUntil(
@@ -33,13 +33,16 @@ self.addEventListener("install", (event) => {
 				console.error("[Service Worker] Tentando cache individual...");
 				// Tenta adicionar um por um para identificar o problema
 				return Promise.all(
-					urlsToCache.map(url => 
-						cache.add(url).catch(e => console.error(`Erro ao cachear ${url}:`, e))
+					urlsToCache.map((url) =>
+						cache
+							.add(url)
+							.catch((e) => console.error(`Erro ao cachear ${url}:`, e))
 					)
 				);
 			});
 		})
 	);
+	// Força a ativação imediata
 	self.skipWaiting();
 });
 
@@ -60,7 +63,7 @@ self.addEventListener("fetch", (event) => {
 
 // Update Service Worker
 self.addEventListener("activate", (event) => {
-	console.log("[Service Worker] Ativando...");
+	console.log("[Service Worker] Ativando v2...");
 	const cacheWhitelist = [CACHE_NAME];
 	event.waitUntil(
 		caches.keys().then((cacheNames) => {
@@ -72,7 +75,9 @@ self.addEventListener("activate", (event) => {
 					}
 				})
 			);
+		}).then(() => {
+			console.log("[Service Worker] Controlando todas as páginas...");
+			return self.clients.claim();
 		})
 	);
-	return self.clients.claim();
 });

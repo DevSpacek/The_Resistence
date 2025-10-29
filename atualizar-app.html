@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#e74c3c">
+    <title>Atualizar App - The Resistance</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+            color: #ffffff;
+            padding: 20px;
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 30px;
+            border: 2px solid #e74c3c;
+            box-shadow: 0 0 30px rgba(231, 76, 60, 0.3);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: #e74c3c;
+            text-shadow: 0 0 20px rgba(231, 76, 60, 0.5);
+        }
+
+        .icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            color: #cccccc;
+        }
+
+        .warning {
+            background: rgba(231, 76, 60, 0.1);
+            border-left: 4px solid #e74c3c;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            text-align: left;
+        }
+
+        .warning strong {
+            color: #e74c3c;
+        }
+
+        .steps {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .steps h3 {
+            color: #4a90e2;
+            margin-bottom: 15px;
+        }
+
+        .steps ol {
+            padding-left: 20px;
+        }
+
+        .steps li {
+            margin: 10px 0;
+            font-size: 1rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 18px;
+            margin: 10px 0;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            box-shadow: 0 4px 20px rgba(231, 76, 60, 0.4);
+        }
+
+        .btn-primary:hover, .btn-primary:active {
+            background: linear-gradient(135deg, #ff5744, #e74c3c);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(231, 76, 60, 0.6);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-secondary:hover, .btn-secondary:active {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            color: white;
+            box-shadow: 0 4px 20px rgba(39, 174, 96, 0.4);
+        }
+
+        .btn-success:hover, .btn-success:active {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+        }
+
+        .status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        .status.success {
+            background: rgba(39, 174, 96, 0.1);
+            border: 2px solid #27ae60;
+            color: #27ae60;
+        }
+
+        .status.error {
+            background: rgba(231, 76, 60, 0.1);
+            border: 2px solid #e74c3c;
+            color: #e74c3c;
+        }
+
+        .status.info {
+            background: rgba(74, 144, 226, 0.1);
+            border: 2px solid #4a90e2;
+            color: #4a90e2;
+        }
+
+        .progress {
+            display: none;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid #4a90e2;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        a {
+            color: #4a90e2;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .icon {
+                font-size: 3rem;
+            }
+
+            button {
+                padding: 15px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="icon">🔄</div>
+            <h1>Atualizar App Mobile</h1>
+            
+            <p>Se o app instalado ainda mostra erro 404, use esta ferramenta para forçar a atualização.</p>
+
+            <div class="warning">
+                <strong>⚠️ Importante:</strong> Esta página força a limpeza do cache antigo e reinstalação do Service Worker atualizado.
+            </div>
+
+            <div id="statusContainer"></div>
+
+            <div class="progress hidden" id="progress">
+                <div class="spinner"></div>
+                <p>Processando...</p>
+            </div>
+
+            <button class="btn-primary" id="btnUpdate" onclick="forceUpdate()">
+                🔄 Forçar Atualização Completa
+            </button>
+
+            <button class="btn-secondary" id="btnUninstall" onclick="uninstallAll()">
+                🗑️ Desinstalar Service Workers
+            </button>
+
+            <button class="btn-secondary" id="btnClearCache" onclick="clearAllCache()">
+                🧹 Limpar Todo Cache
+            </button>
+
+            <button class="btn-success hidden" id="btnReload" onclick="location.reload()">
+                ✅ Recarregar Página
+            </button>
+
+            <button class="btn-success hidden" id="btnGoHome" onclick="goToHome()">
+                🏠 Ir para o App
+            </button>
+
+            <div class="steps">
+                <h3>📱 Solução Manual (se não funcionar):</h3>
+                <ol>
+                    <li><strong>Desinstale o app:</strong> Toque e segure o ícone → Remover/Desinstalar</li>
+                    <li><strong>Limpe o cache do navegador:</strong> Configurações → Apps → Chrome/Safari → Limpar dados</li>
+                    <li><strong>Abra em aba anônima:</strong> <a href="https://devspacek.github.io/The_Resistence/" target="_blank">Link do App</a></li>
+                    <li><strong>Reinstale o app:</strong> Menu → Adicionar à tela inicial</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showStatus(message, type = 'info') {
+            const container = document.getElementById('statusContainer');
+            const status = document.createElement('div');
+            status.className = `status ${type}`;
+            status.textContent = message;
+            container.appendChild(status);
+        }
+
+        function showProgress() {
+            document.getElementById('progress').classList.remove('hidden');
+        }
+
+        function hideProgress() {
+            document.getElementById('progress').classList.add('hidden');
+        }
+
+        async function uninstallAll() {
+            showProgress();
+            showStatus('🔄 Desinstalando Service Workers...', 'info');
+            
+            if ('serviceWorker' in navigator) {
+                try {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    
+                    if (registrations.length === 0) {
+                        showStatus('ℹ️ Nenhum Service Worker encontrado', 'info');
+                    } else {
+                        for (const registration of registrations) {
+                            await registration.unregister();
+                            showStatus(`✅ Service Worker desinstalado: ${registration.scope}`, 'success');
+                        }
+                    }
+                } catch (error) {
+                    showStatus(`❌ Erro: ${error.message}`, 'error');
+                }
+            } else {
+                showStatus('❌ Service Worker não suportado', 'error');
+            }
+            
+            hideProgress();
+        }
+
+        async function clearAllCache() {
+            showProgress();
+            showStatus('🧹 Limpando cache...', 'info');
+            
+            if ('caches' in window) {
+                try {
+                    const cacheNames = await caches.keys();
+                    
+                    if (cacheNames.length === 0) {
+                        showStatus('ℹ️ Nenhum cache encontrado', 'info');
+                    } else {
+                        for (const name of cacheNames) {
+                            await caches.delete(name);
+                            showStatus(`✅ Cache deletado: ${name}`, 'success');
+                        }
+                    }
+                } catch (error) {
+                    showStatus(`❌ Erro: ${error.message}`, 'error');
+                }
+            } else {
+                showStatus('❌ Cache API não suportada', 'error');
+            }
+            
+            hideProgress();
+        }
+
+        async function forceUpdate() {
+            document.getElementById('statusContainer').innerHTML = '';
+            showProgress();
+            
+            // 1. Desinstalar Service Workers
+            showStatus('1️⃣ Desinstalando Service Workers antigos...', 'info');
+            if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                for (const registration of registrations) {
+                    await registration.unregister();
+                }
+                showStatus('✅ Service Workers desinstalados', 'success');
+            }
+            
+            // 2. Limpar Cache
+            showStatus('2️⃣ Limpando cache antigo...', 'info');
+            if ('caches' in window) {
+                const cacheNames = await caches.keys();
+                for (const name of cacheNames) {
+                    await caches.delete(name);
+                }
+                showStatus('✅ Cache limpo', 'success');
+            }
+            
+            // 3. Limpar LocalStorage do histórico
+            showStatus('3️⃣ Limpando LocalStorage...', 'info');
+            try {
+                localStorage.removeItem('resistanceGame');
+                localStorage.removeItem('resistanceHistory');
+                showStatus('✅ LocalStorage limpo', 'success');
+            } catch (e) {
+                showStatus('⚠️ Erro ao limpar LocalStorage', 'error');
+            }
+            
+            // 4. Registrar novo Service Worker
+            showStatus('4️⃣ Registrando Service Worker atualizado...', 'info');
+            if ('serviceWorker' in navigator) {
+                try {
+                    const registration = await navigator.serviceWorker.register('../service-worker.js', {
+                        updateViaCache: 'none'
+                    });
+                    showStatus('✅ Service Worker registrado', 'success');
+                    
+                    // Aguardar ativação
+                    await new Promise(resolve => {
+                        if (registration.active) {
+                            resolve();
+                        } else {
+                            registration.addEventListener('updatefound', () => {
+                                const newWorker = registration.installing;
+                                newWorker.addEventListener('statechange', () => {
+                                    if (newWorker.state === 'activated') {
+                                        resolve();
+                                    }
+                                });
+                            });
+                        }
+                    });
+                    
+                    showStatus('✅ Service Worker ativado', 'success');
+                } catch (error) {
+                    showStatus(`❌ Erro ao registrar: ${error.message}`, 'error');
+                }
+            }
+            
+            hideProgress();
+            showStatus('🎉 Atualização completa! Recarregue a página.', 'success');
+            
+            document.getElementById('btnReload').classList.remove('hidden');
+            document.getElementById('btnGoHome').classList.remove('hidden');
+        }
+
+        function goToHome() {
+            window.location.href = '../index.html';
+        }
+
+        // Verificar status ao carregar
+        window.addEventListener('load', async () => {
+            if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                if (registrations.length > 0) {
+                    showStatus(`ℹ️ ${registrations.length} Service Worker(s) registrado(s)`, 'info');
+                    registrations.forEach(reg => {
+                        showStatus(`Scope: ${reg.scope}`, 'info');
+                    });
+                } else {
+                    showStatus('ℹ️ Nenhum Service Worker registrado', 'info');
+                }
+            }
+
+            if ('caches' in window) {
+                const cacheNames = await caches.keys();
+                if (cacheNames.length > 0) {
+                    showStatus(`ℹ️ ${cacheNames.length} cache(s) encontrado(s)`, 'info');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
