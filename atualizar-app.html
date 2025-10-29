@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -111,7 +112,8 @@
             box-shadow: 0 4px 20px rgba(231, 76, 60, 0.4);
         }
 
-        .btn-primary:hover, .btn-primary:active {
+        .btn-primary:hover,
+        .btn-primary:active {
             background: linear-gradient(135deg, #ff5744, #e74c3c);
             transform: translateY(-2px);
             box-shadow: 0 6px 30px rgba(231, 76, 60, 0.6);
@@ -123,7 +125,8 @@
             border: 2px solid rgba(255, 255, 255, 0.3);
         }
 
-        .btn-secondary:hover, .btn-secondary:active {
+        .btn-secondary:hover,
+        .btn-secondary:active {
             background: rgba(255, 255, 255, 0.2);
             border-color: rgba(255, 255, 255, 0.5);
         }
@@ -134,7 +137,8 @@
             box-shadow: 0 4px 20px rgba(39, 174, 96, 0.4);
         }
 
-        .btn-success:hover, .btn-success:active {
+        .btn-success:hover,
+        .btn-success:active {
             background: linear-gradient(135deg, #2ecc71, #27ae60);
         }
 
@@ -179,8 +183,13 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         .hidden {
@@ -216,16 +225,18 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="card">
             <div class="icon">🔄</div>
             <h1>Atualizar App Mobile</h1>
-            
+
             <p>Se o app instalado ainda mostra erro 404, use esta ferramenta para forçar a atualização.</p>
 
             <div class="warning">
-                <strong>⚠️ Importante:</strong> Esta página força a limpeza do cache antigo e reinstalação do Service Worker atualizado.
+                <strong>⚠️ Importante:</strong> Esta página força a limpeza do cache antigo e reinstalação do Service
+                Worker atualizado.
             </div>
 
             <div id="statusContainer"></div>
@@ -259,8 +270,10 @@
                 <h3>📱 Solução Manual (se não funcionar):</h3>
                 <ol>
                     <li><strong>Desinstale o app:</strong> Toque e segure o ícone → Remover/Desinstalar</li>
-                    <li><strong>Limpe o cache do navegador:</strong> Configurações → Apps → Chrome/Safari → Limpar dados</li>
-                    <li><strong>Abra em aba anônima:</strong> <a href="https://devspacek.github.io/The_Resistence/" target="_blank">Link do App</a></li>
+                    <li><strong>Limpe o cache do navegador:</strong> Configurações → Apps → Chrome/Safari → Limpar dados
+                    </li>
+                    <li><strong>Abra em aba anônima:</strong> <a href="https://devspacek.github.io/The_Resistence/"
+                            target="_blank">Link do App</a></li>
                     <li><strong>Reinstale o app:</strong> Menu → Adicionar à tela inicial</li>
                 </ol>
             </div>
@@ -287,11 +300,11 @@
         async function uninstallAll() {
             showProgress();
             showStatus('🔄 Desinstalando Service Workers...', 'info');
-            
+
             if ('serviceWorker' in navigator) {
                 try {
                     const registrations = await navigator.serviceWorker.getRegistrations();
-                    
+
                     if (registrations.length === 0) {
                         showStatus('ℹ️ Nenhum Service Worker encontrado', 'info');
                     } else {
@@ -306,18 +319,18 @@
             } else {
                 showStatus('❌ Service Worker não suportado', 'error');
             }
-            
+
             hideProgress();
         }
 
         async function clearAllCache() {
             showProgress();
             showStatus('🧹 Limpando cache...', 'info');
-            
+
             if ('caches' in window) {
                 try {
                     const cacheNames = await caches.keys();
-                    
+
                     if (cacheNames.length === 0) {
                         showStatus('ℹ️ Nenhum cache encontrado', 'info');
                     } else {
@@ -332,14 +345,14 @@
             } else {
                 showStatus('❌ Cache API não suportada', 'error');
             }
-            
+
             hideProgress();
         }
 
         async function forceUpdate() {
             document.getElementById('statusContainer').innerHTML = '';
             showProgress();
-            
+
             // 1. Desinstalar Service Workers
             showStatus('1️⃣ Desinstalando Service Workers antigos...', 'info');
             if ('serviceWorker' in navigator) {
@@ -349,7 +362,7 @@
                 }
                 showStatus('✅ Service Workers desinstalados', 'success');
             }
-            
+
             // 2. Limpar Cache
             showStatus('2️⃣ Limpando cache antigo...', 'info');
             if ('caches' in window) {
@@ -359,7 +372,7 @@
                 }
                 showStatus('✅ Cache limpo', 'success');
             }
-            
+
             // 3. Limpar LocalStorage do histórico
             showStatus('3️⃣ Limpando LocalStorage...', 'info');
             try {
@@ -369,7 +382,7 @@
             } catch (e) {
                 showStatus('⚠️ Erro ao limpar LocalStorage', 'error');
             }
-            
+
             // 4. Registrar novo Service Worker
             showStatus('4️⃣ Registrando Service Worker atualizado...', 'info');
             if ('serviceWorker' in navigator) {
@@ -378,7 +391,7 @@
                         updateViaCache: 'none'
                     });
                     showStatus('✅ Service Worker registrado', 'success');
-                    
+
                     // Aguardar ativação
                     await new Promise(resolve => {
                         if (registration.active) {
@@ -394,16 +407,16 @@
                             });
                         }
                     });
-                    
+
                     showStatus('✅ Service Worker ativado', 'success');
                 } catch (error) {
                     showStatus(`❌ Erro ao registrar: ${error.message}`, 'error');
                 }
             }
-            
+
             hideProgress();
             showStatus('🎉 Atualização completa! Recarregue a página.', 'success');
-            
+
             document.getElementById('btnReload').classList.remove('hidden');
             document.getElementById('btnGoHome').classList.remove('hidden');
         }
@@ -435,4 +448,5 @@
         });
     </script>
 </body>
+
 </html>

@@ -66,18 +66,24 @@ self.addEventListener("activate", (event) => {
 	console.log("[Service Worker] Ativando v2...");
 	const cacheWhitelist = [CACHE_NAME];
 	event.waitUntil(
-		caches.keys().then((cacheNames) => {
-			return Promise.all(
-				cacheNames.map((cacheName) => {
-					if (cacheWhitelist.indexOf(cacheName) === -1) {
-						console.log("[Service Worker] Deletando cache antigo:", cacheName);
-						return caches.delete(cacheName);
-					}
-				})
-			);
-		}).then(() => {
-			console.log("[Service Worker] Controlando todas as páginas...");
-			return self.clients.claim();
-		})
+		caches
+			.keys()
+			.then((cacheNames) => {
+				return Promise.all(
+					cacheNames.map((cacheName) => {
+						if (cacheWhitelist.indexOf(cacheName) === -1) {
+							console.log(
+								"[Service Worker] Deletando cache antigo:",
+								cacheName
+							);
+							return caches.delete(cacheName);
+						}
+					})
+				);
+			})
+			.then(() => {
+				console.log("[Service Worker] Controlando todas as páginas...");
+				return self.clients.claim();
+			})
 	);
 });
