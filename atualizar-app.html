@@ -387,7 +387,16 @@
             showStatus('4️⃣ Registrando Service Worker atualizado...', 'info');
             if ('serviceWorker' in navigator) {
                 try {
-                    const registration = await navigator.serviceWorker.register('../service-worker.js', {
+                    // Detecta o caminho correto baseado na URL atual
+                    const currentPath = window.location.pathname;
+                    const basePathMatch = currentPath.match(/^(\/[^\/]+\/)/);
+                    const basePath = basePathMatch ? basePathMatch[1] : '/';
+                    const swPath = `${basePath}service-worker.js`;
+                    
+                    showStatus(`📍 Registrando em: ${swPath}`, 'info');
+                    
+                    const registration = await navigator.serviceWorker.register(swPath, {
+                        scope: basePath,
                         updateViaCache: 'none'
                     });
                     showStatus('✅ Service Worker registrado', 'success');
@@ -422,7 +431,11 @@
         }
 
         function goToHome() {
-            window.location.href = '../index.html';
+            // Detecta o caminho correto
+            const currentPath = window.location.pathname;
+            const basePathMatch = currentPath.match(/^(\/[^\/]+\/)/);
+            const basePath = basePathMatch ? basePathMatch[1] : '/';
+            window.location.href = `${basePath}index.html`;
         }
 
         // Verificar status ao carregar
