@@ -88,7 +88,7 @@ const GameManager = {
 	// Get spy count based on player count
 	getSpyCount(playerCount) {
 		if (playerCount <= 6) return 2;
-		if (playerCount <= 8) return 3;
+		if (playerCount <= 9) return 3;
 		return 4;
 	},
 

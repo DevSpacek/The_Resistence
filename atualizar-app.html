@@ -392,9 +392,9 @@
                     const basePathMatch = currentPath.match(/^(\/[^\/]+\/)/);
                     const basePath = basePathMatch ? basePathMatch[1] : '/';
                     const swPath = `${basePath}service-worker.js`;
-                    
+
                     showStatus(`📍 Registrando em: ${swPath}`, 'info');
-                    
+
                     const registration = await navigator.serviceWorker.register(swPath, {
                         scope: basePath,
                         updateViaCache: 'none'

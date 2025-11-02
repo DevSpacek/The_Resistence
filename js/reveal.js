@@ -140,7 +140,6 @@ document.addEventListener("DOMContentLoaded", () => {
                             ${otherSpies
 															.map((spy) => {
 																let note = "";
-																if (spy.thumbsUp) note = "(Desertor)";
 																return `<li><strong>${spy.playerName}</strong>${note}</li>`;
 															})
 															.join("")}
@@ -218,10 +217,10 @@ document.addEventListener("DOMContentLoaded", () => {
 			// // Se Espião Desertor
 			// if (role.faction === "spy" && role.thumbsUp) {
 			// 	infoHTML += `
-            //         <div class="info-box warning">
-            //             <p><strong>👍 Revelação:</strong> Durante a fase de revelação, ESTENDA SEU POLEGAR ao invés de abrir os olhos!</p>
-            //         </div>
-            //     `;
+			//         <div class="info-box warning">
+			//             <p><strong>👍 Revelação:</strong> Durante a fase de revelação, ESTENDA SEU POLEGAR ao invés de abrir os olhos!</p>
+			//         </div>
+			//     `;
 			// }
 
 			// Se desertores se conhecem
