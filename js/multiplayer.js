@@ -84,7 +84,11 @@ class MultiplayerManager {
 
 			// Set timeout for connection attempt
 			const connectionTimeout = setTimeout(() => {
-				reject(new Error("Tempo de conexão esgotado. Verifique se o código está correto e se o host está online."));
+				reject(
+					new Error(
+						"Tempo de conexão esgotado. Verifique se o código está correto e se o host está online."
+					)
+				);
 			}, 15000); // 15 seconds timeout
 
 			const conn = this.peer.connect(hostPeerId, {
@@ -110,7 +114,12 @@ class MultiplayerManager {
 			conn.on("error", (error) => {
 				console.error("Connection error:", error);
 				clearTimeout(connectionTimeout);
-				reject(new Error("Erro ao conectar: " + (error.message || "Código inválido ou host offline")));
+				reject(
+					new Error(
+						"Erro ao conectar: " +
+							(error.message || "Código inválido ou host offline")
+					)
+				);
 			});
 		});
 	}
@@ -509,7 +518,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			const errorMsg = error.message || "Erro desconhecido";
 			showJoinStatus(errorMsg, "disconnected");
 			console.error(error);
-			
+
 			// Add retry button
 			const statusDiv = document.getElementById("joinStatus");
 			const retryBtn = document.createElement("button");
@@ -520,9 +529,9 @@ document.addEventListener("DOMContentLoaded", () => {
 				hideJoinStatus();
 				multiplayerManager.disconnect();
 			};
-			
+
 			// Check if retry button already exists
-			if (!statusDiv.querySelector('button')) {
+			if (!statusDiv.querySelector("button")) {
 				statusDiv.appendChild(retryBtn);
 			}
 		}

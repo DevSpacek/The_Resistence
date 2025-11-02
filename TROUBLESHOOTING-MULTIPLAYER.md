@@ -5,11 +5,13 @@
 ### 🎯 Causas Comuns:
 
 #### 1. **Testando com múltiplas abas no mesmo navegador**
+
 **Sintoma:** Trava em "Conectando..." e nunca conecta
 
 **Causa:** O WebRTC/PeerJS tem limitações ao conectar múltiplas instâncias no mesmo navegador/dispositivo.
 
 **Solução:**
+
 ```
 ❌ NÃO USE:
 - Chrome aba 1 + Chrome aba 2
@@ -25,24 +27,30 @@
 ```
 
 #### 2. **Código da sala incorreto**
+
 **Sintoma:** Trava e depois mostra erro de timeout
 
 **Solução:**
+
 - Verifique se copiou o código completo
 - O código é case-sensitive (diferencia maiúsculas/minúsculas)
 - Use o botão "Copiar Código" para evitar erros
 
 #### 3. **Host fechou a sala**
+
 **Sintoma:** Erro "peer-unavailable" ou timeout
 
 **Solução:**
+
 - Certifique-se de que o host ainda está com a sala aberta
 - Peça ao host para criar uma nova sala
 
 #### 4. **Redes Wi-Fi diferentes**
+
 **Sintoma:** Não conecta ou timeout
 
 **Solução:**
+
 - Todos devem estar na MESMA rede Wi-Fi
 - Desconecte VPNs
 - Desabilite dados móveis e use apenas Wi-Fi
@@ -54,6 +62,7 @@
 ### ✅ Teste Básico (2 Dispositivos)
 
 **Opção 1: PC + Celular**
+
 ```
 1. PC (Host):
    - Abra Chrome
@@ -67,6 +76,7 @@
 ```
 
 **Opção 2: Dois Navegadores Diferentes**
+
 ```
 1. Chrome (Host):
    - Crie a sala
@@ -79,6 +89,7 @@
 ```
 
 **Opção 3: Dois Dispositivos Físicos**
+
 ```
 1. Notebook (Host):
    - Crie a sala
@@ -96,6 +107,7 @@
 Abra o console do navegador e procure por:
 
 **No Host:**
+
 ```javascript
 ✅ Bom:
 "Peer ID: abc123xyz"
@@ -108,6 +120,7 @@ Abra o console do navegador e procure por:
 ```
 
 **No Jogador:**
+
 ```javascript
 ✅ Bom:
 "Peer ID: def456"
@@ -140,11 +153,11 @@ IPv4: 192.168.1.100
 // Cole no console do navegador para testar PeerJS:
 
 const peer = new Peer();
-peer.on('open', (id) => {
-    console.log('✅ PeerJS funcionando! ID:', id);
+peer.on("open", (id) => {
+	console.log("✅ PeerJS funcionando! ID:", id);
 });
-peer.on('error', (err) => {
-    console.log('❌ Erro PeerJS:', err);
+peer.on("error", (err) => {
+	console.log("❌ Erro PeerJS:", err);
 });
 ```
 
@@ -153,26 +166,34 @@ peer.on('error', (err) => {
 ## 💡 Soluções Rápidas
 
 ### Solução 1: Use Dispositivos Diferentes
+
 **Melhor opção para garantir que funciona**
+
 - Host no computador
 - Jogadores em celulares/tablets
 - Todos na mesma Wi-Fi
 
 ### Solução 2: Use Navegadores Diferentes
+
 **Funciona no mesmo PC**
+
 - Host: Chrome
 - Jogador 1: Firefox
 - Jogador 2: Edge
 - Jogador 3: Opera
 
 ### Solução 3: Use Modo Incógnito com Cuidado
+
 **Pode funcionar parcialmente**
+
 - Chrome normal (Host)
 - Chrome incógnito (Jogador)
 - ⚠️ Pode ter limitações
 
 ### Solução 4: Reinicie Tudo
+
 **Quando nada funciona**
+
 1. Feche todas as abas
 2. Limpe o cache (Ctrl+Shift+Del)
 3. Reabra o navegador
@@ -183,35 +204,43 @@ peer.on('error', (err) => {
 ## 🐛 Erros Específicos
 
 ### ❌ "Tempo de conexão esgotado"
+
 **Causa:** Não conseguiu conectar em 15 segundos
 
 **Soluções:**
+
 1. Código está errado → Verifique o código
 2. Host offline → Confirme que host está com sala aberta
 3. Firewall bloqueando → Desative temporariamente
 4. Redes diferentes → Conecte na mesma Wi-Fi
 
 ### ❌ "peer-unavailable"
+
 **Causa:** O peer ID não existe ou já desconectou
 
 **Soluções:**
+
 1. Host fechou a sala → Peça para criar nova sala
 2. Código expirou → Use código mais recente
 3. Digitou errado → Copie o código novamente
 
 ### ❌ "Could not connect to peer"
+
 **Causa:** WebRTC não conseguiu estabelecer conexão
 
 **Soluções:**
+
 1. Firewall/Antivírus → Desabilite temporariamente
 2. Rede corporativa/escola → Pode bloquear P2P
 3. VPN ativa → Desative VPN
 4. Use outra rede → Tente Wi-Fi doméstico
 
 ### ❌ "Peer error: network"
+
 **Causa:** Problema de rede
 
 **Soluções:**
+
 1. Verifique conexão com internet
 2. Reinicie o roteador
 3. Troque de rede Wi-Fi
@@ -286,16 +315,19 @@ Já tentou:
 Se o modo multiplayer não funcionar na sua rede:
 
 ### **Opção 1: Modo Clássico**
+
 - Use o modo clássico (passa o dispositivo)
 - Funciona 100% sem necessidade de rede
 - Mais lento mas sempre funciona
 
 ### **Opção 2: Servidor Remoto**
+
 - Deploy no GitHub Pages
 - Acesse via internet (não só rede local)
 - Funciona de qualquer lugar
 
 ### **Opção 3: Hotspot**
+
 - Crie um hotspot Wi-Fi no celular
 - Conecte todos os dispositivos nele
 - Crie a sala e teste
@@ -307,12 +339,14 @@ Se o modo multiplayer não funcionar na sua rede:
 Você saberá que funcionou quando:
 
 **No Host:**
+
 - ✅ Código da sala aparece
 - ✅ QR Code é gerado
 - ✅ Jogador aparece na lista
 - ✅ Contador aumenta para 2
 
 **No Jogador:**
+
 - ✅ Mensagem "✅ Conectado"
 - ✅ Vê a lista de jogadores
 - ✅ Vê o próprio nome na lista
