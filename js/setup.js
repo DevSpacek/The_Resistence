@@ -3,6 +3,12 @@ document.addEventListener("DOMContentLoaded", () => {
 	const selectedSpecials = new Set();
 	let playerNames = [];
 
+	// Add animation indices to sections
+	animateSections();
+
+	// Add animation indices to character cards
+	animateCharacterCards();
+
 	// Check if there's saved history
 	checkHistory();
 
@@ -39,6 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		for (let i = 0; i < selectedPlayerCount; i++) {
 			const inputDiv = document.createElement("div");
 			inputDiv.className = "player-name-input";
+			inputDiv.style.setProperty("--input-index", i);
 
 			inputDiv.innerHTML = `
                 <label for="player${i}">Jogador ${i + 1}:</label>
@@ -380,6 +387,21 @@ document.addEventListener("DOMContentLoaded", () => {
 		// Navigate to reveal screen
 		window.location.href = "reveal.html";
 	});
+
+	// Animation functions
+	function animateSections() {
+		const sections = document.querySelectorAll(".config-section");
+		sections.forEach((section, index) => {
+			section.style.setProperty("--section-index", index);
+		});
+	}
+
+	function animateCharacterCards() {
+		const cards = document.querySelectorAll(".character-card");
+		cards.forEach((card, index) => {
+			card.style.setProperty("--card-index", index);
+		});
+	}
 
 	// Initialize
 	updateGameInfo();

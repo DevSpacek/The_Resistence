@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Modo Multiplayer - The Resistance">
+    <meta name="theme-color" content="#4a90e2">
+    <title>Multiplayer - The Resistance</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .room-section {
+            margin: 20px 0;
+            padding: 25px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .room-code-display {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #4a90e2;
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            margin: 20px 0;
+            letter-spacing: 3px;
+            word-break: break-all;
+            user-select: text;
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            cursor: text;
+            position: relative;
+        }
+
+        .room-code-container {
+            position: relative;
+        }
+
+        .btn-copy-code {
+            display: block;
+            width: 100%;
+            margin: 10px 0;
+            padding: 12px 24px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-copy-code:hover {
+            background: #229954;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(39, 174, 96, 0.3);
+        }
+
+        .btn-copy-code:active {
+            transform: translateY(0);
+        }
+
+        .btn-copy-code.copied {
+            background: #2ecc71;
+        }
+
+        .copy-feedback {
+            display: none;
+            text-align: center;
+            color: #27ae60;
+            font-weight: bold;
+            margin-top: 10px;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .copy-feedback.show {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .player-list {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+
+        .player-item {
+            padding: 15px;
+            background: rgba(74, 144, 226, 0.1);
+            margin: 10px 0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .player-item.ready {
+            background: rgba(39, 174, 96, 0.15);
+            border-left: 4px solid #27ae60;
+        }
+
+        .player-item.host {
+            background: rgba(142, 68, 173, 0.15);
+            border-left: 4px solid #8e44ad;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .status-badge.host {
+            background: #8e44ad;
+            color: white;
+        }
+
+        .status-badge.ready {
+            background: #27ae60;
+            color: white;
+        }
+
+        .status-badge.waiting {
+            background: #f39c12;
+            color: white;
+        }
+
+        .connection-status {
+            text-align: center;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+
+        .connection-status.connected {
+            background: rgba(39, 174, 96, 0.2);
+            color: #27ae60;
+        }
+
+        .connection-status.disconnected {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+        }
+
+        .connection-status.connecting {
+            background: rgba(243, 156, 18, 0.2);
+            color: #f39c12;
+        }
+
+        .input-group {
+            margin: 15px 0;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #4a90e2;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .btn-group button {
+            flex: 1;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .info-box {
+            padding: 15px;
+            background: rgba(52, 152, 219, 0.1);
+            border-left: 4px solid #3498db;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+
+        .error-box {
+            padding: 15px;
+            background: rgba(231, 76, 60, 0.1);
+            border-left: 4px solid #e74c3c;
+            border-radius: 4px;
+            margin: 15px 0;
+            color: #e74c3c;
+        }
+
+        .qr-code-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .qr-code-container canvas {
+            max-width: 250px;
+            margin: 0 auto;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 480px) {
+            .room-code-display {
+                font-size: 1.8rem;
+                letter-spacing: 2px;
+                padding: 15px;
+            }
+
+            .btn-copy-code {
+                padding: 15px 20px;
+                font-size: 1.1rem;
+            }
+
+            .copy-feedback {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🎭 The Resistance</h1>
+            <p class="subtitle">Modo Multiplayer Local</p>
+            <div style="margin-top: 10px;">
+                <a href="index.html" class="btn-secondary" style="display: inline-block; margin-right: 10px;">
+                    ← Voltar ao Menu
+                </a>
+                <a href="guia-multiplayer.html" class="btn-help"
+                    style="display: inline-block; color: #27ae60; text-decoration: none; font-size: 0.9rem;">
+                    📖 Guia Completo
+                </a>
+            </div>
+        </header>
+
+        <main>
+            <!-- Initial Selection Screen -->
+            <section id="selectionScreen" class="room-section">
+                <h2>Escolha uma Opção</h2>
+                <p class="info-text">Conecte-se com outros jogadores na mesma rede Wi-Fi</p>
+
+                <div class="input-group">
+                    <label for="playerName">Seu Nome:</label>
+                    <input type="text" id="playerName" placeholder="Digite seu nome" maxlength="20">
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn-primary" id="btnCreateRoom">
+                        🏠 Criar Sala
+                    </button>
+                    <button class="btn-primary" id="btnJoinRoom">
+                        🚪 Entrar na Sala
+                    </button>
+                </div>
+
+                <div class="info-box">
+                    <p><strong>📱 Como funciona:</strong></p>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li>O host cria uma sala e compartilha o código</li>
+                        <li>Outros jogadores entram usando o código</li>
+                        <li>Todos devem estar na mesma rede Wi-Fi</li>
+                        <li>Cada jogador verá sua carta no próprio dispositivo</li>
+                    </ul>
+                </div>
+
+                <div class="warning-box" style="background: rgba(243, 156, 18, 0.1); border-left: 4px solid #f39c12; padding: 15px; border-radius: 4px; margin: 15px 0;">
+                    <p><strong>⚠️ Para Testes:</strong></p>
+                    <p style="margin-top: 8px; font-size: 0.9rem;">Testar com múltiplas abas no mesmo navegador pode não funcionar devido a limitações do WebRTC. Para testes reais, use:</p>
+                    <ul style="margin: 10px 0; padding-left: 20px; font-size: 0.9rem;">
+                        <li>Navegadores diferentes (Chrome + Firefox)</li>
+                        <li>Dispositivos diferentes (PC + celular)</li>
+                        <li>Modo anônimo + navegador normal pode funcionar parcialmente</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Join Room Screen -->
+            <section id="joinScreen" class="room-section hidden">
+                <h2>Entrar na Sala</h2>
+
+                <div class="input-group">
+                    <label for="roomCode">Código da Sala:</label>
+                    <input type="text" id="roomCode" placeholder="Digite o código da sala"
+                        style="text-transform: uppercase;">
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn-secondary" id="btnBackFromJoin">
+                        ← Voltar
+                    </button>
+                    <button class="btn-primary" id="btnConnect">
+                        Conectar
+                    </button>
+                </div>
+
+                <div id="joinStatus" class="connection-status connecting hidden">
+                    <p>Conectando...</p>
+                </div>
+
+                <div class="info-box" style="margin-top: 20px;">
+                    <p><strong>💡 Dica:</strong></p>
+                    <p style="margin-top: 8px; font-size: 0.9rem;">Se a conexão travar, verifique:</p>
+                    <ul style="margin: 10px 0; padding-left: 20px; font-size: 0.9rem;">
+                        <li>O código está correto (case-sensitive)</li>
+                        <li>O host está com a sala aberta</li>
+                        <li>Ambos estão na mesma rede Wi-Fi</li>
+                        <li>Use dispositivos diferentes para melhor resultado</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Host Room Screen -->
+            <section id="hostScreen" class="room-section hidden">
+                <h2>Sala Criada</h2>
+
+                <div class="connection-status connected">
+                    <p>✅ Sala ativa - Aguardando jogadores</p>
+                </div>
+
+                <div class="room-code-container">
+                    <div class="room-code-display" id="displayRoomCode">
+                        <!-- Room code will be inserted here -->
+                    </div>
+
+                    <button class="btn-copy-code" id="btnCopyCode">
+                        📋 Copiar Código
+                    </button>
+
+                    <div class="copy-feedback" id="copyFeedback">
+                        ✅ Código copiado!
+                    </div>
+                </div>
+
+                <p class="info-text" style="text-align: center;">
+                    Compartilhe este código com os outros jogadores
+                </p>
+
+                <!-- QR Code for easy joining -->
+                <div class="qr-code-container" id="qrCodeContainer">
+                    <!-- QR code will be generated here -->
+                </div>
+
+                <div class="room-section">
+                    <h3>Jogadores Conectados (<span id="playerCount">1</span>)</h3>
+                    <ul class="player-list" id="playerList">
+                        <!-- Player list will be populated here -->
+                    </ul>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn-secondary" id="btnCancelRoom">
+                        Cancelar Sala
+                    </button>
+                    <button class="btn-primary" id="btnStartGame" disabled>
+                        Iniciar Jogo
+                    </button>
+                </div>
+
+                <div class="info-box">
+                    <p>⚠️ Mínimo de 5 jogadores para iniciar</p>
+                    <p>📱 Máximo de 10 jogadores</p>
+                </div>
+            </section>
+
+            <!-- Player Waiting Room -->
+            <section id="waitingRoom" class="room-section hidden">
+                <h2>Sala: <span id="waitingRoomCode"></span></h2>
+
+                <div class="connection-status connected">
+                    <p>✅ Conectado - Aguardando início do jogo</p>
+                </div>
+
+                <div class="room-section">
+                    <h3>Jogadores na Sala (<span id="waitingPlayerCount">0</span>)</h3>
+                    <ul class="player-list" id="waitingPlayerList">
+                        <!-- Player list will be populated here -->
+                    </ul>
+                </div>
+
+                <button class="btn-secondary" id="btnLeaveRoom">
+                    Sair da Sala
+                </button>
+
+                <div class="info-box">
+                    <p>⏳ Aguardando o host iniciar o jogo...</p>
+                </div>
+            </section>
+
+            <!-- Game Role Screen -->
+            <section id="roleRevealScreen" class="room-section hidden">
+                <h2>Sua Carta</h2>
+
+                <div id="playerRoleCard" class="role-card">
+                    <!-- Role card will be displayed here -->
+                </div>
+
+                <button class="btn-primary" id="btnBackToLobby">
+                    Voltar ao Lobby
+                </button>
+            </section>
+        </main>
+    </div>
+
+    <!-- Include PeerJS from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <!-- Include QRCode library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <!-- Include game logic -->
+    <script src="js/game.js"></script>
+    <script src="js/multiplayer.js"></script>
+</body>
+
+</html>
