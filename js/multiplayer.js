@@ -26,25 +26,50 @@ class MultiplayerManager {
 		return new Promise((resolve, reject) => {
 			this.myPlayerName = playerName;
 
-			// Create peer with custom configuration for LAN
+			console.log("🔧 Inicializando PeerJS...");
+
+			// Create peer with improved configuration
 			this.peer = new Peer({
 				config: {
 					iceServers: [
 						{ urls: "stun:stun.l.google.com:19302" },
 						{ urls: "stun:stun1.l.google.com:19302" },
+						{ urls: "stun:stun2.l.google.com:19302" },
+						{ urls: "stun:stun3.l.google.com:19302" },
+						{ urls: "stun:stun4.l.google.com:19302" },
 					],
+					// ICE transport policy - try all methods
+					iceTransportPolicy: "all",
 				},
+				// Enable debug mode
+				debug: 2,
 			});
 
 			this.peer.on("open", (id) => {
-				console.log("Peer ID:", id);
+				console.log("✅ Peer conectado! ID:", id);
+				console.log("📡 Tipo de conexão: P2P via WebRTC");
 				this.myPeerId = id;
 				resolve(id);
 			});
 
 			this.peer.on("error", (error) => {
-				console.error("Peer error:", error);
-				reject(error);
+				console.error("❌ Peer error:", error);
+				console.error("Tipo de erro:", error.type);
+
+				let errorMessage = "Erro ao inicializar conexão.";
+
+				if (error.type === "unavailable-id") {
+					errorMessage = "ID não disponível. Tente novamente.";
+				} else if (error.type === "network") {
+					errorMessage = "Erro de rede. Verifique sua conexão com a internet.";
+				} else if (error.type === "server-error") {
+					errorMessage =
+						"Erro no servidor PeerJS. Tente novamente em alguns segundos.";
+				} else if (error.type === "socket-error") {
+					errorMessage = "Erro de socket. Verifique firewall/antivírus.";
+				}
+
+				reject(new Error(errorMessage));
 			});
 
 			// Handle incoming connections (for host)
@@ -80,10 +105,12 @@ class MultiplayerManager {
 			// The room code IS the host's peer ID
 			const hostPeerId = roomCode;
 
-			console.log("Connecting to host:", hostPeerId);
+			console.log("🔗 Tentando conectar ao host:", hostPeerId);
+			console.log("📍 Meu Peer ID:", this.myPeerId);
 
 			// Set timeout for connection attempt
 			const connectionTimeout = setTimeout(() => {
+				console.error("⏱️ Timeout: Não conseguiu conectar em 15 segundos");
 				reject(
 					new Error(
 						"Tempo de conexão esgotado. Verifique se o código está correto e se o host está online."
@@ -91,36 +118,56 @@ class MultiplayerManager {
 				);
 			}, 15000); // 15 seconds timeout
 
-			const conn = this.peer.connect(hostPeerId, {
-				reliable: true,
-			});
-
-			conn.on("open", () => {
-				console.log("Connected to host");
-				clearTimeout(connectionTimeout);
-				this.hostConnection = conn;
-
-				// Send join request
-				this.sendToHost({
-					type: "join",
-					playerName: this.myPlayerName,
-					peerId: this.myPeerId,
+			try {
+				const conn = this.peer.connect(hostPeerId, {
+					reliable: true,
+					serialization: "json",
 				});
 
-				this.setupConnectionHandlers(conn);
-				resolve();
-			});
+				console.log("🔌 Objeto de conexão criado, aguardando 'open'...");
 
-			conn.on("error", (error) => {
-				console.error("Connection error:", error);
+				conn.on("open", () => {
+					console.log("✅ Conexão estabelecida com o host!");
+					clearTimeout(connectionTimeout);
+					this.hostConnection = conn;
+
+					// Send join request
+					console.log("📤 Enviando pedido de entrada na sala...");
+					this.sendToHost({
+						type: "join",
+						playerName: this.myPlayerName,
+						peerId: this.myPeerId,
+					});
+
+					this.setupConnectionHandlers(conn);
+					resolve();
+				});
+
+				conn.on("error", (error) => {
+					console.error("❌ Erro na conexão:", error);
+					console.error("❌ Tipo do erro:", error.type);
+					clearTimeout(connectionTimeout);
+
+					let errorMsg = "Erro ao conectar: ";
+					if (error.type === "peer-unavailable") {
+						errorMsg += "Sala não encontrada. Verifique o código.";
+					} else if (error.type === "network") {
+						errorMsg += "Erro de rede. Verifique sua conexão Wi-Fi.";
+					} else {
+						errorMsg += error.message || "Código inválido ou host offline";
+					}
+
+					reject(new Error(errorMsg));
+				});
+
+				conn.on("close", () => {
+					console.log("🔌 Conexão fechada pelo host");
+				});
+			} catch (error) {
+				console.error("❌ Exceção ao criar conexão:", error);
 				clearTimeout(connectionTimeout);
-				reject(
-					new Error(
-						"Erro ao conectar: " +
-							(error.message || "Código inválido ou host offline")
-					)
-				);
-			});
+				reject(error);
+			}
 		});
 	}
 
@@ -128,15 +175,16 @@ class MultiplayerManager {
 	handleIncomingConnection(conn) {
 		if (!this.isHost) return;
 
-		console.log("New connection from:", conn.peer);
+		console.log("📥 Nova conexão recebida de:", conn.peer);
 
 		conn.on("open", () => {
+			console.log("✅ Conexão aberta com:", conn.peer);
 			this.connections.set(conn.peer, conn);
 			this.setupConnectionHandlers(conn);
 		});
 
 		conn.on("error", (error) => {
-			console.error("Connection error:", error);
+			console.error("❌ Erro na conexão com", conn.peer, ":", error);
 			this.connections.delete(conn.peer);
 			this.players.delete(conn.peer);
 			this.broadcastPlayerList();
