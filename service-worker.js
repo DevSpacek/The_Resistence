@@ -1,4 +1,4 @@
-const CACHE_NAME = "the-resistance-v2"; // Versão atualizada para forçar renovação
+const CACHE_NAME = "the-resistance-v3"; // Versão atualizada - removida identificação de desertor
 
 // Detecta automaticamente o caminho base (funciona com GitHub Pages e localhost)
 const getBasePath = () => {
