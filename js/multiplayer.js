@@ -100,10 +100,11 @@ class MultiplayerManager {
 	joinRoom(roomCode) {
 		return new Promise((resolve, reject) => {
 			this.isHost = false;
-			this.roomCode = roomCode;
+			// IMPORTANTE: PeerJS é case-sensitive! Sempre usar minúsculas
+			this.roomCode = roomCode.toLowerCase();
 
 			// The room code IS the host's peer ID
-			const hostPeerId = roomCode;
+			const hostPeerId = this.roomCode;
 
 			console.log("🔗 Tentando conectar ao host:", hostPeerId);
 			console.log("📍 Meu Peer ID:", this.myPeerId);
@@ -671,8 +672,10 @@ document.addEventListener("DOMContentLoaded", () => {
 	}
 
 	function displayRoomCode(code) {
+		// IMPORTANTE: Sempre mostrar em minúsculas (PeerJS é case-sensitive)
+		const normalizedCode = code.toLowerCase();
 		const displayElement = document.getElementById("displayRoomCode");
-		displayElement.textContent = code;
+		displayElement.textContent = normalizedCode;
 
 		// Add copy functionality
 		const btnCopy = document.getElementById("btnCopyCode");
@@ -687,22 +690,25 @@ document.addEventListener("DOMContentLoaded", () => {
 				try {
 					// Try using modern clipboard API
 					if (navigator.clipboard && navigator.clipboard.writeText) {
-						await navigator.clipboard.writeText(code);
+						await navigator.clipboard.writeText(normalizedCode);
 						showCopySuccess(newBtnCopy, copyFeedback);
 					} else {
 						// Fallback for older browsers
-						copyToClipboardFallback(code);
+						copyToClipboardFallback(normalizedCode);
 						showCopySuccess(newBtnCopy, copyFeedback);
 					}
 				} catch (error) {
 					console.error("Error copying code:", error);
 					// Try fallback method
 					try {
-						copyToClipboardFallback(code);
+						copyToClipboardFallback(normalizedCode);
 						showCopySuccess(newBtnCopy, copyFeedback);
 					} catch (fallbackError) {
 						console.error("Fallback copy failed:", fallbackError);
-						alert("Não foi possível copiar automaticamente. Código: " + code);
+						alert(
+							"Não foi possível copiar automaticamente. Código: " +
+								normalizedCode
+						);
 					}
 				}
 			});
@@ -765,8 +771,11 @@ document.addEventListener("DOMContentLoaded", () => {
 		const container = document.getElementById("qrCodeContainer");
 		container.innerHTML = ""; // Clear previous QR code
 
+		// IMPORTANTE: Normalizar para minúsculas (PeerJS é case-sensitive)
+		const normalizedCode = roomCode.toLowerCase();
+
 		// Create QR code with room join URL
-		const joinURL = `${window.location.origin}${window.location.pathname}?join=${roomCode}`;
+		const joinURL = `${window.location.origin}${window.location.pathname}?join=${normalizedCode}`;
 
 		try {
 			new QRCode(container, {
@@ -1076,7 +1085,8 @@ document.addEventListener("DOMContentLoaded", () => {
 	const urlParams = new URLSearchParams(window.location.search);
 	const joinCode = urlParams.get("join");
 	if (joinCode) {
-		roomCodeInput.value = joinCode;
+		// IMPORTANTE: Normalizar para minúsculas (PeerJS é case-sensitive)
+		roomCodeInput.value = joinCode.toLowerCase();
 		// Auto-switch to join screen
 		// User still needs to enter name
 	}
