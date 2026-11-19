@@ -1,4 +1,4 @@
-const CACHE_NAME = "the-resistance-v3"; // Versão atualizada - removida identificação de desertor
+const CACHE_NAME = "the-resistance-v6"; // Includes visual Mission Map board and hexagonal tokens
 
 // Detecta automaticamente o caminho base (funciona com GitHub Pages e localhost)
 const getBasePath = () => {
@@ -13,51 +13,51 @@ const urlsToCache = [
 	`${BASE_PATH}`,
 	`${BASE_PATH}index.html`,
 	`${BASE_PATH}reveal.html`,
+	`${BASE_PATH}multiplayer.html`,
+	`${BASE_PATH}master.html`,
 	`${BASE_PATH}styles.css`,
 	`${BASE_PATH}js/game.js`,
+	`${BASE_PATH}js/board.js`,
 	`${BASE_PATH}js/setup.js`,
 	`${BASE_PATH}js/reveal.js`,
+	`${BASE_PATH}js/multiplayer.js`,
+	`${BASE_PATH}images_back/mission-map.png`,
+	`${BASE_PATH}images_back/token-ally.png`,
+	`${BASE_PATH}images_back/token-axis.png`,
 	`${BASE_PATH}manifest.json`,
 ];
 
 // Install Service Worker
 self.addEventListener("install", (event) => {
-	console.log("[Service Worker] Instalando v2...");
-	console.log("[Service Worker] Base Path:", BASE_PATH);
-	console.log("[Service Worker] URLs para cache:", urlsToCache);
 	event.waitUntil(
 		caches.open(CACHE_NAME).then((cache) => {
-			console.log("[Service Worker] Cache aberto");
-			return cache.addAll(urlsToCache).catch((err) => {
-				console.error("[Service Worker] Erro ao adicionar ao cache:", err);
-				console.error("[Service Worker] Tentando cache individual...");
-				// Tenta adicionar um por um para identificar o problema
-				return Promise.all(
-					urlsToCache.map((url) =>
-						cache
-							.add(url)
-							.catch((e) => console.error(`Erro ao cachear ${url}:`, e))
-					)
-				);
-			});
+			return Promise.all(
+				urlsToCache.map((url) =>
+					cache.add(url).catch((e) => console.warn(`Cache skip ${url}:`, e))
+				)
+			);
 		})
 	);
-	// Força a ativação imediata
 	self.skipWaiting();
 });
 
-// Fetch from cache
+// Network-first fetch with cache fallback for offline support
 self.addEventListener("fetch", (event) => {
+	if (event.request.method !== "GET") return;
 	event.respondWith(
-		caches.match(event.request).then((response) => {
-			// Cache hit - return response
-			if (response) {
-				return response;
-			}
-			return fetch(event.request).catch((err) => {
-				console.error("[Service Worker] Erro no fetch:", err);
-			});
-		})
+		fetch(event.request)
+			.then((networkResponse) => {
+				if (networkResponse && networkResponse.status === 200) {
+					const responseClone = networkResponse.clone();
+					caches.open(CACHE_NAME).then((cache) => {
+						cache.put(event.request, responseClone);
+					});
+				}
+				return networkResponse;
+			})
+			.catch(() => {
+				return caches.match(event.request);
+			})
 	);
 });
 

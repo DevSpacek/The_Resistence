@@ -2,291 +2,265 @@
 <html lang="pt-BR">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="description" content="Aplicativo para gerenciar partidas do jogo The Resistance">
-    <meta name="theme-color" content="#4a90e2">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="The Resistance">
-    <title>The Resistance - Configuração</title>
-    <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="styles.css">
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+	<meta name="description" content="The Resistance - Aplicativo Oficial de Operações, Sorteio de Papéis, Multiplayer e Tabuleiro Tático">
+	<meta name="theme-color" content="#1e3a4c">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+	<meta name="apple-mobile-web-app-title" content="The Resistance">
+	<title>The Resistance - Quartel General</title>
+	<link rel="manifest" href="manifest.json">
+	<link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
-    <div class="container">
-        <header>
-            <h1>🎭 The Resistance</h1>
-            <p class="subtitle">Configure sua partida</p>
-            <button class="btn-install" id="btnInstall" style="display: none;">
-                📱 Instalar App
-            </button>
+	<div class="container">
+		<header class="hero-header">
+			<div class="emblem-badge">OPERAÇÃO SECRETA</div>
+			<h1>THE RESISTANCE</h1>
+			<p class="subtitle">Central de Comando, Identidades & Tabuleiro Tático</p>
 
-            <!-- Multiplayer Mode Button -->
-            <div style="margin-top: 15px;">
-                <a href="multiplayer.html" class="btn-primary"
-                    style="display: inline-block; text-decoration: none; padding: 12px 24px; border-radius: 8px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-weight: bold;">
-                    🌐 Modo Multiplayer Local
-                </a>
-            </div>
+			<button class="btn-install" id="btnInstall" style="display: none;">
+				📱 Instalar Aplicativo
+			</button>
 
-            <div style="margin-top: 10px;">
-                <a href="como-instalar.html" class="btn-help"
-                    style="display: inline-block; color: #4a90e2; text-decoration: none; font-size: 0.9rem; margin-right: 15px;">
-                    ❓ Como instalar no celular
-                </a>
-                <a href="diagnostico-pwa.html" class="btn-help"
-                    style="display: inline-block; color: #27ae60; text-decoration: none; font-size: 0.9rem; margin-right: 15px;">
-                    🔍 Diagnóstico PWA
-                </a>
-                <a href="atualizar-app.html" class="btn-help"
-                    style="display: inline-block; color: #e74c3c; text-decoration: none; font-size: 0.9rem;">
-                    🔄 Atualizar App
-                </a>
-            </div>
-        </header>
+			<!-- Game Mode Selector Cards -->
+			<div class="mode-cards-grid">
+				<a href="#singleDeviceSetup" class="mode-nav-card active-mode">
+					<span class="mode-card-icon">📱</span>
+					<div class="mode-card-body">
+						<strong>1 Celular (Passar Aparelho)</strong>
+						<span>Sorteio de cartas + Tabuleiro e Votação no mesmo celular</span>
+					</div>
+				</a>
 
-        <main class="setup-screen">
-            <!-- History Buttons -->
-            <section class="config-section history-section">
-                <div class="history-buttons">
-                    <button type="button" class="btn-secondary" id="btnLoadHistory">
-                        📋 Carregar Última Configuração
-                    </button>
-                    <button type="button" class="btn-secondary btn-danger" id="btnClearHistory">
-                        🗑️ Limpar Histórico
-                    </button>
-                </div>
-                <p class="info-text" id="historyInfo" style="display: none;"></p>
-            </section>
+				<a href="multiplayer.html" class="mode-nav-card">
+					<span class="mode-card-icon">🌐</span>
+					<div class="mode-card-body">
+						<strong>Multiplayer (Vários Aparelhos)</strong>
+						<span>Cada jogador vê sua carta, aliados e vota no próprio celular</span>
+					</div>
+				</a>
 
-            <!-- Step 1: Player Count -->
-            <section class="config-section">
-                <h2>Número de Jogadores</h2>
-                <div class="player-selector">
-                    <button type="button" class="btn-player" data-players="5">5</button>
-                    <button type="button" class="btn-player" data-players="6">6</button>
-                    <button type="button" class="btn-player" data-players="7">7</button>
-                    <button type="button" class="btn-player" data-players="8">8</button>
-                    <button type="button" class="btn-player" data-players="9">9</button>
-                    <button type="button" class="btn-player" data-players="10">10</button>
-                </div>
-            </section>
+				<a href="master.html" class="mode-nav-card master-card">
+					<span class="mode-card-icon">🎙️</span>
+					<div class="mode-card-body">
+						<strong>Modo Mestre / Narrador</strong>
+						<span>Apenas Tabuleiro, Votações e Cartas do Desertor (sem sorteio)</span>
+					</div>
+				</a>
+			</div>
 
-            <!-- Step 2: Player Names -->
-            <section class="config-section" id="playerNamesSection" style="display: none;">
-                <h2>Nome dos Jogadores</h2>
-                <p class="info-text">Digite o nome de cada participante:</p>
-                <div id="playerNamesContainer" class="player-names-grid">
-                    <!-- Dynamic inputs will be added here -->
-                </div>
-            </section>
+			<div class="utility-links-bar">
+				<a href="como-instalar.html" class="btn-help">❓ Como Instalar</a>
+				<a href="diagnostico-pwa.html" class="btn-help">🔍 Diagnóstico PWA</a>
+				<a href="atualizar-app.html" class="btn-help">🔄 Atualizar App</a>
+			</div>
+		</header>
 
-            <!-- Step 3: Special Characters -->
-            <section class="config-section">
-                <h2>Personagens Especiais</h2>
-                <p class="info-text">Selecione os personagens que deseja incluir na partida:</p>
+		<main class="setup-screen" id="singleDeviceSetup">
+			<div class="section-banner-header">
+				<span class="mode-pill">📱 MODO 1 APARELHO</span>
+				<h2>Configurar Partida Completa</h2>
+			</div>
 
-                <div class="characters-grid">
-                    <label class="character-option resistance">
-                        <input type="checkbox" id="comandante" value="comandante">
-                        <div class="character-card">
-                            <h3>👑 Comandante</h3>
-                            <span class="faction">Resistência</span>
-                            <p>Conhece todos os espiões (incluindo Espião Cego)</p>
-                        </div>
-                    </label>
+			<!-- History Buttons -->
+			<section class="config-section history-section">
+				<div class="history-buttons">
+					<button type="button" class="btn-secondary" id="btnLoadHistory">
+						📋 Carregar Última Configuração
+					</button>
+					<button type="button" class="btn-secondary btn-danger" id="btnClearHistory">
+						🗑️ Limpar Histórico
+					</button>
+				</div>
+				<p class="info-text" id="historyInfo" style="display: none;"></p>
+			</section>
 
-                    <label class="character-option resistance">
-                        <input type="checkbox" id="guardacostas" value="guardacostas">
-                        <div class="character-card">
-                            <h3>🛡️ Guarda-Costas</h3>
-                            <span class="faction">Resistência</span>
-                            <p>Conhece o Comandante e protege ele</p>
-                        </div>
-                    </label>
+			<!-- Step 1: Player Count -->
+			<section class="config-section">
+				<h2>1. Número de Jogadores</h2>
+				<div class="player-selector">
+					<button type="button" class="btn-player" data-players="5">5</button>
+					<button type="button" class="btn-player" data-players="6">6</button>
+					<button type="button" class="btn-player" data-players="7">7</button>
+					<button type="button" class="btn-player" data-players="8">8</button>
+					<button type="button" class="btn-player" data-players="9">9</button>
+					<button type="button" class="btn-player" data-players="10">10</button>
+				</div>
+			</section>
 
-                    <label class="character-option spy">
-                        <input type="checkbox" id="assassino" value="assassino">
-                        <div class="character-card">
-                            <h3>🗡️ Assassino</h3>
-                            <span class="faction">Espião</span>
-                            <p>Deve eliminar o Comandante para vencer</p>
-                        </div>
-                    </label>
+			<!-- Step 2: Player Names -->
+			<section class="config-section" id="playerNamesSection" style="display: none;">
+				<h2>2. Codinome dos Agentes</h2>
+				<p class="info-text">Digite o nome de cada participante na ordem da roda:</p>
+				<div id="playerNamesContainer" class="player-names-grid">
+					<!-- Dynamic inputs -->
+				</div>
+			</section>
 
-                    <label class="character-option spy">
-                        <input type="checkbox" id="espiaocego" value="espiaocego">
-                        <div class="character-card">
-                            <h3>👁️ Espião Cego</h3>
-                            <span class="faction">Espião</span>
-                            <p>Não conhece/é conhecido por outros espiões, mas Comandante o conhece</p>
-                        </div>
-                    </label>
+			<!-- Step 3: Special Characters -->
+			<section class="config-section">
+				<h2>3. Personagens Especiais</h2>
+				<p class="info-text">Selecione os módulos e personagens especiais para incluir na missão:</p>
 
-                    <label class="character-option spy">
-                        <input type="checkbox" id="agenteinvisivel" value="agenteinvisivel">
-                        <div class="character-card">
-                            <h3>👻 Agente Invisível</h3>
-                            <span class="faction">Espião</span>
-                            <p>Invisível ao Comandante, mas conhece os espiões</p>
-                        </div>
-                    </label>
+				<div class="characters-grid">
+					<label class="character-option resistance">
+						<input type="checkbox" id="comandante" value="comandante">
+						<div class="character-card">
+							<h3>👑 Comandante</h3>
+							<span class="faction">Resistência</span>
+							<p>Conhece todos os espiões (incluindo Espião Cego, exceto Invisível)</p>
+						</div>
+					</label>
 
-                    <label class="character-option spy">
-                        <input type="checkbox" id="comandantefalso" value="comandantefalso">
-                        <div class="character-card">
-                            <h3>👹 Comandante Falso</h3>
-                            <span class="faction">Espião</span>
-                            <p>Se revela ao Guarda-Costas como Comandante</p>
-                        </div>
-                    </label>
+					<label class="character-option resistance">
+						<input type="checkbox" id="guardacostas" value="guardacostas">
+						<div class="character-card">
+							<h3>🛡️ Guarda-Costas</h3>
+							<span class="faction">Resistência</span>
+							<p>Conhece e protege a identidade do Comandante</p>
+						</div>
+					</label>
 
-                    <label class="character-option neutral">
-                        <input type="checkbox" id="desertor" value="desertor">
-                        <div class="character-card">
-                            <h3>🔄 Desertor (Par)</h3>
-                            <span class="faction">Ambas facções</span>
-                            <p>1 Resistência + 1 Espião que podem trocar de lado</p>
-                        </div>
-                    </label>
-                </div>
+					<label class="character-option spy">
+						<input type="checkbox" id="assassino" value="assassino">
+						<div class="character-card">
+							<h3>🗡️ Assassino</h3>
+							<span class="faction">Espião</span>
+							<p>Se a Resistência vencer 3 missões, tem 1 tiro para eliminar o Comandante</p>
+						</div>
+					</label>
 
-                <!-- Comandante Falso Options -->
-                <div id="comandanteFalsoOptions" class="special-options" style="display: none;">
-                    <h3>Opções do Comandante Falso:</h3>
-                    <div class="radio-group">
-                        <label class="radio-option">
-                            <input type="radio" name="comandanteFalsoType" value="doesntKnow" checked>
-                            <span>Não conhece os espiões (regra oficial)</span>
-                        </label>
-                        <label class="radio-option">
-                            <input type="radio" name="comandanteFalsoType" value="knows">
-                            <span>Conhece os espiões (variante)</span>
-                        </label>
-                    </div>
-                </div>
+					<label class="character-option spy">
+						<input type="checkbox" id="espiaocego" value="espiaocego">
+						<div class="character-card">
+							<h3>👁️ Espião Cego</h3>
+							<span class="faction">Espião</span>
+							<p>Não conhece nem é conhecido pelos outros espiões, mas o Comandante o vê</p>
+						</div>
+					</label>
 
-                <!-- Desertor Options -->
-                <div id="desertorOptions" class="special-options" style="display: none;">
-                    <h3>Opções do Desertor:</h3>
-                    <div class="radio-group">
-                        <label class="radio-option">
-                            <input type="radio" name="desertorType" value="dontKnow" checked>
-                            <span>Desertores NÃO se conhecem (padrão)</span>
-                        </label>
-                        <label class="radio-option">
-                            <input type="radio" name="desertorType" value="knowEachOther">
-                            <span>Desertores se conhecem (para muitos jogadores)</span>
-                        </label>
-                    </div>
-                    <p class="info-text">⚠️ Baralho de Troca de Lealdade deve ser usado fisicamente (não implementado no
-                        app)</p>
-                </div>
-            </section>
+					<label class="character-option spy">
+						<input type="checkbox" id="agenteinvisivel" value="agenteinvisivel">
+						<div class="character-card">
+							<h3>👻 Agente Invisível</h3>
+							<span class="faction">Espião</span>
+							<p>Invisível ao Comandante, mas conhece os outros espiões</p>
+						</div>
+					</label>
 
-            <div class="game-info" id="gameInfo">
-                <p>Selecione o número de jogadores para continuar</p>
-            </div>
+					<label class="character-option spy">
+						<input type="checkbox" id="comandantefalso" value="comandantefalso">
+						<div class="character-card">
+							<h3>👹 Comandante Falso</h3>
+							<span class="faction">Espião</span>
+							<p>Se revela ao Guarda-Costas como se fosse o Comandante</p>
+						</div>
+					</label>
 
-            <button class="btn-primary btn-start" id="btnStart" disabled>
-                Iniciar Jogo
-            </button>
-        </main>
-    </div>
+					<label class="character-option neutral">
+						<input type="checkbox" id="desertor" value="desertor">
+						<div class="character-card">
+							<h3>🔄 Desertor (Par)</h3>
+							<span class="faction">Ambas Facções</span>
+							<p>1 Resistência + 1 Espião que podem trocar de lado com o Baralho Digital do Desertor</p>
+						</div>
+					</label>
+				</div>
 
-    <script src="js/game.js"></script>
-    <script src="js/setup.js"></script>
-    <script>
-        // PWA Installation
-        let deferredPrompt;
-        const installButton = document.getElementById('btnInstall');
+				<!-- Comandante Falso Options -->
+				<div id="comandanteFalsoOptions" class="special-options" style="display: none;">
+					<h3>Opções do Comandante Falso:</h3>
+					<div class="radio-group">
+						<label class="radio-option">
+							<input type="radio" name="comandanteFalsoType" value="doesntKnow" checked>
+							<span>Não conhece os espiões (regra oficial)</span>
+						</label>
+						<label class="radio-option">
+							<input type="radio" name="comandanteFalsoType" value="knows">
+							<span>Conhece os espiões (variante)</span>
+						</label>
+					</div>
+				</div>
 
-        // Check if already installed
-        function isAppInstalled() {
-            // Check if running in standalone mode (already installed)
-            if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
-                return true;
-            }
-            return false;
-        }
+				<!-- Desertor Options -->
+				<div id="desertorOptions" class="special-options" style="display: none;">
+					<h3>Opções do Desertor:</h3>
+					<div class="radio-group">
+						<label class="radio-option">
+							<input type="radio" name="desertorType" value="dontKnow" checked>
+							<span>Desertores NÃO se conhecem (padrão)</span>
+						</label>
+						<label class="radio-option">
+							<input type="radio" name="desertorType" value="knowEachOther">
+							<span>Desertores se conhecem desde o início</span>
+						</label>
+					</div>
+					<p class="info-text" style="margin-top: 10px; color: #d4af37;">
+						🃏 <strong>Baralho de Troca de Lealdade Digital Incluso:</strong> O botão para sortear a carta de mudança do Desertor estará disponível direto no Tabuleiro da partida!
+					</p>
+				</div>
+			</section>
 
-        // Show button on load if PWA is supported but not installed
-        window.addEventListener('load', () => {
-            // If already installed, hide button
-            if (isAppInstalled()) {
-                console.log('App já está instalado');
-                installButton.style.display = 'none';
-                return;
-            }
+			<div class="game-info" id="gameInfo">
+				<p>Selecione o número de jogadores para continuar</p>
+			</div>
 
-            // For debugging - show install status
-            console.log('PWA Status:', {
-                isStandalone: window.matchMedia('(display-mode: standalone)').matches,
-                hasServiceWorker: 'serviceWorker' in navigator,
-                protocol: window.location.protocol,
-                isLocalhost: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-            });
+			<button class="btn-primary btn-start" id="btnStart" disabled>
+				Distribuir Identidades & Abrir Tabuleiro
+			</button>
+		</main>
+	</div>
 
-            // Show button if HTTPS or localhost (where PWA works)
-            if (window.location.protocol === 'https:' ||
-                window.location.hostname === 'localhost' ||
-                window.location.hostname === '127.0.0.1') {
+	<script src="js/game.js?v=7"></script>
+	<script src="js/setup.js?v=7"></script>
+	<script>
+		// PWA Installation
+		let deferredPrompt;
+		const installButton = document.getElementById('btnInstall');
 
-                // Check if on mobile
-                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+		function isAppInstalled() {
+			return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+		}
 
-                if (isMobile) {
-                    // On mobile, wait for beforeinstallprompt or show manual instructions
-                    console.log('Mobile detectado - aguardando beforeinstallprompt');
-                }
-            }
-        });
+		window.addEventListener('load', () => {
+			if (isAppInstalled()) {
+				installButton.style.display = 'none';
+			}
+		});
 
-        window.addEventListener('beforeinstallprompt', (e) => {
-            console.log('beforeinstallprompt disparado!');
-            e.preventDefault();
-            deferredPrompt = e;
-            installButton.style.display = 'inline-block';
-        });
+		window.addEventListener('beforeinstallprompt', (e) => {
+			e.preventDefault();
+			deferredPrompt = e;
+			installButton.style.display = 'inline-block';
+		});
 
-        installButton.addEventListener('click', async () => {
-            if (!deferredPrompt) {
-                console.log('Sem deferredPrompt - mostrando instruções manuais');
-                // Redirect to instructions page
-                window.location.href = 'como-instalar.html';
-                return;
-            }
+		installButton.addEventListener('click', async () => {
+			if (!deferredPrompt) {
+				const a = document.createElement('a');
+				a.href = 'como-instalar.html';
+				document.body.appendChild(a);
+				a.click();
+				return;
+			}
+			deferredPrompt.prompt();
+			const { outcome } = await deferredPrompt.userChoice;
+			deferredPrompt = null;
+			if (outcome === 'accepted') {
+				installButton.style.display = 'none';
+			}
+		});
 
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            console.log(`Escolha do usuário: ${outcome}`);
-            deferredPrompt = null;
+		window.addEventListener('appinstalled', () => {
+			installButton.style.display = 'none';
+		});
 
-            if (outcome === 'accepted') {
-                installButton.style.display = 'none';
-            }
-        });
-
-        window.addEventListener('appinstalled', () => {
-            console.log('PWA instalado com sucesso!');
-            installButton.style.display = 'none';
-        });
-
-        // Register Service Worker
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./service-worker.js')
-                .then(reg => {
-                    console.log('Service Worker registrado com sucesso:', reg.scope);
-                })
-                .catch(err => {
-                    console.error('Erro ao registrar Service Worker:', err);
-                });
-        } else {
-            console.log('Service Worker não suportado neste navegador');
-        }
-    </script>
+		if ('serviceWorker' in navigator) {
+			navigator.serviceWorker.register('./service-worker.js').catch(err => console.error(err));
+		}
+	</script>
 </body>
 
 </html>

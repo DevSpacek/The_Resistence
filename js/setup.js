@@ -315,11 +315,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	// Clear history
 	function clearHistory() {
-		if (confirm("Tem certeza que deseja limpar o histórico?")) {
-			localStorage.removeItem("resistanceHistory");
-			checkHistory();
-			alert("🗑️ Histórico limpo com sucesso!");
-		}
+		localStorage.removeItem("resistanceHistory");
+		checkHistory();
 	}
 
 	// Load History Button
@@ -335,18 +332,8 @@ document.addEventListener("DOMContentLoaded", () => {
 	// Start game
 	document.getElementById("btnStart").addEventListener("click", () => {
 		if (!selectedPlayerCount) {
-			alert("Selecione o número de jogadores!");
-			return;
-		}
-
-		// Validar e alertar sobre espiões especiais em excesso
-		const validation = validateSpySpecials();
-		if (validation.overflow > 0) {
-			const confirmMsg = `⚠️ ATENÇÃO!\n\nVocê selecionou ${validation.selectedSpySpecials} personagem(ns) especial(is) espião(ões), mas há apenas ${validation.availableSlots} vaga(s) disponível(is).\n\nApenas ${validation.availableSlots} personagem(ns) será(ão) selecionado(s) ALEATORIAMENTE para o jogo.\n\nDeseja continuar?`;
-
-			if (!confirm(confirmMsg)) {
-				return;
-			}
+			selectedPlayerCount = 5;
+			generatePlayerNameInputs();
 		}
 
 		// Save to history before starting
@@ -362,15 +349,19 @@ document.addEventListener("DOMContentLoaded", () => {
 			const selectedOption = document.querySelector(
 				'input[name="comandanteFalsoType"]:checked'
 			);
-			options.comandanteFalsoKnows = selectedOption.value === "knows";
+			if (selectedOption) {
+				options.comandanteFalsoKnows = selectedOption.value === "knows";
+			}
 		}
 
 		if (selectedSpecials.has("desertor")) {
 			const selectedOption = document.querySelector(
 				'input[name="desertorType"]:checked'
 			);
-			options.desertoresKnowEachOther =
-				selectedOption.value === "knowEachOther";
+			if (selectedOption) {
+				options.desertoresKnowEachOther =
+					selectedOption.value === "knowEachOther";
+			}
 		}
 
 		// Distribute roles
@@ -382,10 +373,20 @@ document.addEventListener("DOMContentLoaded", () => {
 		);
 
 		// Save game state
-		GameManager.saveGame(selectedPlayerCount, roles, playerNames);
+		GameManager.saveGame(
+			selectedPlayerCount,
+			roles,
+			playerNames,
+			options,
+			Array.from(selectedSpecials)
+		);
 
-		// Navigate to reveal screen
-		window.location.href = "reveal.html";
+		// Navigate to reveal screen using an anchor click (compatible with proxy/iframe wrappers that intercept location.href)
+		const navLink = document.createElement("a");
+		navLink.href = "reveal.html";
+		navLink.style.display = "none";
+		document.body.appendChild(navLink);
+		navLink.click();
 	});
 
 	// Animation functions
@@ -403,6 +404,15 @@ document.addEventListener("DOMContentLoaded", () => {
 		});
 	}
 
+	// Pre-select 5 players by default so the Start button is immediately ready
+	const defaultPlayerBtn = document.querySelector('.btn-player[data-players="5"]');
+	if (defaultPlayerBtn) {
+		defaultPlayerBtn.classList.add("selected");
+		selectedPlayerCount = 5;
+		generatePlayerNameInputs();
+	}
+
 	// Initialize
 	updateGameInfo();
+	validateStart();
 });

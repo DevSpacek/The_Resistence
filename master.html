@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+	<meta name="description" content="Modo Mestre e Narrador - Tabuleiro Tático The Resistance">
+	<meta name="theme-color" content="#1e3a4c">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+	<title>The Resistance - Modo Mestre / Narrador</title>
+	<link rel="manifest" href="manifest.json">
+	<link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+	<div class="container">
+		<header class="compact-header">
+			<div class="header-top-bar">
+				<a href="index.html" class="btn-nav-back">← Menu Principal</a>
+				<span class="mode-pill master-pill">🎙️ Modo Mestre / Narrador</span>
+			</div>
+			<h1>THE RESISTANCE</h1>
+			<p class="subtitle">Tabuleiro de Operações, Votações & Cartas (Sem Sorteio de Papéis)</p>
+		</header>
+
+		<main class="setup-screen">
+			<!-- Quick Player Count Bar for Mission Table -->
+			<section class="config-section master-toolbar">
+				<div class="master-count-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+					<div style="flex: 1 1 260px;">
+						<h2 style="margin-bottom: 6px;">Escala da Mesa (<span id="masterCountDisplay">5</span> Jogadores)</h2>
+						<p class="info-text" style="margin-bottom: 0;">Ajuste a quantidade de jogadores para configurar o tamanho das equipes em cada missão e a regra de 2 falhas na 4ª rodada (7+ jogadores).</p>
+					</div>
+					<button type="button" class="btn-secondary btn-danger btn-sm" id="btnMasterTopReset">
+						🔄 Reiniciar Tabuleiro
+					</button>
+				</div>
+				<div class="player-selector compact-selector">
+					<button type="button" class="btn-player selected" data-master-players="5">5</button>
+					<button type="button" class="btn-player" data-master-players="6">6</button>
+					<button type="button" class="btn-player" data-master-players="7">7</button>
+					<button type="button" class="btn-player" data-master-players="8">8</button>
+					<button type="button" class="btn-player" data-master-players="9">9</button>
+					<button type="button" class="btn-player" data-master-players="10">10</button>
+				</div>
+			</section>
+
+			<!-- Interactive Tactical Mission Board -->
+			<div id="masterBoardMount"></div>
+
+			<!-- Narrator Script Helper Accordion -->
+			<section class="config-section narrator-script-box">
+				<h2>🎙️ Guia Rápido do Narrador (Fase da Noite)</h2>
+				<p class="info-text">Use este roteiro caso esteja narrando com cartas físicas:</p>
+				<ol class="narrator-steps-list">
+					<li><strong>"Todos fechem os olhos e estendam o punho na mesa."</strong></li>
+					<li><strong>"Espiões (exceto Espião Cego), abram os olhos e reconheçam seus aliados."</strong> <em>(Se houver Desertor Espião, ele apenas levanta o polegar mantendo os olhos abertos ou conforme variante).</em></li>
+					<li><strong>"Espiões, fechem os olhos."</strong></li>
+					<li><strong>"Se houver Comandante: Todos os Espiões (incluindo Espião Cego, mas EXCETO Agente Invisível) levantem o polegar. Comandante, abra os olhos e identifique os Espiões."</strong></li>
+					<li><strong>"Espiões, abaixem o polegar. Comandante, feche os olhos."</strong></li>
+					<li><strong>"Se houver Guarda-Costas: Comandante (e Comandante Falso), levantem o polegar. Guarda-Costas, abra os olhos e veja quem você deve proteger."</strong></li>
+					<li><strong>"Abaixem o polegar e fechem os olhos. Todos podem abrir os olhos — que comece a 1ª Missão!"</strong></li>
+				</ol>
+			</section>
+		</main>
+	</div>
+
+	<script src="js/game.js?v=7"></script>
+	<script src="js/board.js?v=7"></script>
+	<script>
+		document.addEventListener("DOMContentLoaded", () => {
+			let currentPlayers = 5;
+			const mount = document.getElementById("masterBoardMount");
+			const countDisplay = document.getElementById("masterCountDisplay");
+			const btnMasterTopReset = document.getElementById("btnMasterTopReset");
+
+			let boardState = GameManager.createBoardState(currentPlayers, true);
+
+			const boardController = new BoardUIController({
+				container: mount,
+				boardState: boardState,
+				roles: null,
+				mode: "master",
+				onStateChange: (newState) => {
+					boardState = newState;
+				}
+			});
+
+			boardController.render();
+
+			function resetMasterBoard(playerCount) {
+				currentPlayers = playerCount;
+				countDisplay.textContent = currentPlayers;
+				boardState = GameManager.createBoardState(currentPlayers, true);
+				boardController.activePhase = "overview";
+				boardController.setBoardState(boardState);
+				boardController.showBanner("🔄 Tabuleiro reiniciado para a 1ª Missão!", "info");
+			}
+
+			// Top Reset Button
+			if (btnMasterTopReset) {
+				btnMasterTopReset.addEventListener("click", () => {
+					resetMasterBoard(currentPlayers);
+				});
+			}
+
+			// Handle player count switches
+			const countButtons = document.querySelectorAll("[data-master-players]");
+			countButtons.forEach((btn) => {
+				btn.addEventListener("click", () => {
+					const newCount = parseInt(btn.dataset.masterPlayers, 10);
+					countButtons.forEach((b) => b.classList.remove("selected"));
+					btn.classList.add("selected");
+					resetMasterBoard(newCount);
+				});
+			});
+		});
+	</script>
+</body>
+
+</html>

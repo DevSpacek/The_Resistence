@@ -1,9 +1,9 @@
-// Multiplayer Manager for The Resistance
+// Multiplayer Manager & Real-Time Tactical Board / Voting Sync for The Resistance
 class MultiplayerManager {
 	constructor() {
 		this.peer = null;
-		this.connections = new Map(); // Map of peerId -> connection
-		this.players = new Map(); // Map of peerId -> player info
+		this.connections = new Map(); // peerId -> DataConnection
+		this.players = new Map(); // peerId -> { peerId, name, isHost, ready }
 		this.isHost = false;
 		this.hostConnection = null;
 		this.roomCode = null;
@@ -12,79 +12,79 @@ class MultiplayerManager {
 		this.gameState = null;
 		this.myRole = null;
 
-		// Configuration state (for host)
-		this.selectedPlayerCount = null;
-		this.selectedSpecials = new Set();
-		this.gameOptions = {
-			comandanteFalsoKnows: false,
-			desertoresKnowEachOther: false,
-		};
+		// Live Multiplayer Board & Voting State
+		this.boardState = null;
+		this.mpVoteSession = null;
+		// mpVoteSession schema:
+		// {
+		//   type: 'team_approval' | 'mission_execution' | 'loyalty_alert',
+		//   status: 'voting' | 'completed',
+		//   teamPeerIds: [],
+		//   teamNames: [],
+		//   votesByPeer: {}, // peerId -> boolean | 'success' | 'fail'
+		//   resultSummary: null
+		// }
 	}
 
-	// Initialize PeerJS connection
 	init(playerName) {
 		return new Promise((resolve, reject) => {
 			this.myPlayerName = playerName;
 
-			console.log("🔧 Inicializando PeerJS...");
+			if (this.peer && !this.peer.destroyed) {
+				this.peer.destroy();
+			}
 
-			// Create peer with improved configuration
-			this.peer = new Peer({
+			// Generate a clean, short 6-character alphanumeric room ID so mobile inputs never overflow!
+			const shortId =
+				"tr-" +
+				Array.from({ length: 6 }, () =>
+					"abcdefghjkmnpqrstuvwxyz23456789".charAt(
+						Math.floor(Math.random() * 31)
+					)
+				).join("");
+
+			this.peer = new Peer(shortId, {
 				config: {
 					iceServers: [
 						{ urls: "stun:stun.l.google.com:19302" },
 						{ urls: "stun:stun1.l.google.com:19302" },
 						{ urls: "stun:stun2.l.google.com:19302" },
 						{ urls: "stun:stun3.l.google.com:19302" },
-						{ urls: "stun:stun4.l.google.com:19302" },
 					],
-					// ICE transport policy - try all methods
 					iceTransportPolicy: "all",
 				},
-				// Enable debug mode
-				debug: 2,
+				debug: 1,
 			});
 
 			this.peer.on("open", (id) => {
-				console.log("✅ Peer conectado! ID:", id);
-				console.log("📡 Tipo de conexão: P2P via WebRTC");
 				this.myPeerId = id;
 				resolve(id);
 			});
 
 			this.peer.on("error", (error) => {
-				console.error("❌ Peer error:", error);
-				console.error("Tipo de erro:", error.type);
-
+				console.error("PeerJS Error:", error);
 				let errorMessage = "Erro ao inicializar conexão.";
-
 				if (error.type === "unavailable-id") {
-					errorMessage = "ID não disponível. Tente novamente.";
+					errorMessage = "Código temporariamente em uso. Tente novamente.";
+				} else if (error.type === "peer-unavailable") {
+					errorMessage =
+						"Sala não encontrada. Verifique se o código está correto e o Host está online.";
 				} else if (error.type === "network") {
 					errorMessage = "Erro de rede. Verifique sua conexão com a internet.";
-				} else if (error.type === "server-error") {
-					errorMessage =
-						"Erro no servidor PeerJS. Tente novamente em alguns segundos.";
-				} else if (error.type === "socket-error") {
-					errorMessage = "Erro de socket. Verifique firewall/antivírus.";
 				}
-
 				reject(new Error(errorMessage));
 			});
 
-			// Handle incoming connections (for host)
 			this.peer.on("connection", (conn) => {
 				this.handleIncomingConnection(conn);
 			});
 		});
 	}
 
-	// Create a room (host)
 	createRoom() {
 		this.isHost = true;
-		this.roomCode = this.generateRoomCode();
+		this.roomCode = this.myPeerId;
 
-		// Add host as first player
 		this.players.set(this.myPeerId, {
 			peerId: this.myPeerId,
 			name: this.myPlayerName,
@@ -92,48 +92,41 @@ class MultiplayerManager {
 			ready: true,
 		});
 
-		console.log("Room created:", this.roomCode);
 		return this.roomCode;
 	}
 
-	// Join a room (client)
-	joinRoom(roomCode) {
+	joinRoom(rawCode) {
 		return new Promise((resolve, reject) => {
 			this.isHost = false;
-			// IMPORTANTE: PeerJS é case-sensitive! Sempre usar minúsculas
-			this.roomCode = roomCode.toLowerCase();
+			let normalized = rawCode.trim().toLowerCase();
+			// Support typing with or without "tr-" prefix if 6 chars
+			if (
+				normalized.length === 6 &&
+				!normalized.startsWith("tr-") &&
+				!normalized.includes("-")
+			) {
+				normalized = "tr-" + normalized;
+			}
+			this.roomCode = normalized;
 
-			// The room code IS the host's peer ID
-			const hostPeerId = this.roomCode;
-
-			console.log("🔗 Tentando conectar ao host:", hostPeerId);
-			console.log("📍 Meu Peer ID:", this.myPeerId);
-
-			// Set timeout for connection attempt
 			const connectionTimeout = setTimeout(() => {
-				console.error("⏱️ Timeout: Não conseguiu conectar em 15 segundos");
 				reject(
 					new Error(
-						"Tempo de conexão esgotado. Verifique se o código está correto e se o host está online."
+						"Tempo esgotado (15s). Verifique o código e se o Host está com a sala aberta."
 					)
 				);
-			}, 15000); // 15 seconds timeout
+			}, 15000);
 
 			try {
-				const conn = this.peer.connect(hostPeerId, {
+				const conn = this.peer.connect(this.roomCode, {
 					reliable: true,
 					serialization: "json",
 				});
 
-				console.log("🔌 Objeto de conexão criado, aguardando 'open'...");
-
 				conn.on("open", () => {
-					console.log("✅ Conexão estabelecida com o host!");
 					clearTimeout(connectionTimeout);
 					this.hostConnection = conn;
 
-					// Send join request
-					console.log("📤 Enviando pedido de entrada na sala...");
 					this.sendToHost({
 						type: "join",
 						playerName: this.myPlayerName,
@@ -145,107 +138,80 @@ class MultiplayerManager {
 				});
 
 				conn.on("error", (error) => {
-					console.error("❌ Erro na conexão:", error);
-					console.error("❌ Tipo do erro:", error.type);
 					clearTimeout(connectionTimeout);
-
-					let errorMsg = "Erro ao conectar: ";
-					if (error.type === "peer-unavailable") {
-						errorMsg += "Sala não encontrada. Verifique o código.";
-					} else if (error.type === "network") {
-						errorMsg += "Erro de rede. Verifique sua conexão Wi-Fi.";
-					} else {
-						errorMsg += error.message || "Código inválido ou host offline";
-					}
-
-					reject(new Error(errorMsg));
-				});
-
-				conn.on("close", () => {
-					console.log("🔌 Conexão fechada pelo host");
+					reject(
+						new Error(
+							"Erro ao conectar: " +
+								(error.message || "Sala não encontrada")
+						)
+					);
 				});
 			} catch (error) {
-				console.error("❌ Exceção ao criar conexão:", error);
 				clearTimeout(connectionTimeout);
 				reject(error);
 			}
 		});
 	}
 
-	// Handle incoming connection (host only)
 	handleIncomingConnection(conn) {
 		if (!this.isHost) return;
 
-		console.log("📥 Nova conexão recebida de:", conn.peer);
-
 		conn.on("open", () => {
-			console.log("✅ Conexão aberta com:", conn.peer);
 			this.connections.set(conn.peer, conn);
 			this.setupConnectionHandlers(conn);
 		});
 
-		conn.on("error", (error) => {
-			console.error("❌ Erro na conexão com", conn.peer, ":", error);
+		conn.on("error", () => {
 			this.connections.delete(conn.peer);
 			this.players.delete(conn.peer);
 			this.broadcastPlayerList();
 		});
 	}
 
-	// Setup handlers for a connection
 	setupConnectionHandlers(conn) {
 		conn.on("data", (data) => {
 			this.handleMessage(data, conn);
 		});
 
 		conn.on("close", () => {
-			console.log("Connection closed:", conn.peer);
 			this.connections.delete(conn.peer);
 			this.players.delete(conn.peer);
-
 			if (this.isHost) {
 				this.broadcastPlayerList();
 			}
 		});
 	}
 
-	// Handle incoming messages
 	handleMessage(data, conn) {
-		console.log("Received message:", data);
-
 		switch (data.type) {
 			case "join":
-				if (this.isHost) {
-					this.handleJoinRequest(data, conn);
-				}
+				if (this.isHost) this.handleJoinRequest(data, conn);
 				break;
 
 			case "playerList":
 				this.handlePlayerList(data);
 				break;
 
-			case "startGame":
-				this.handleGameStart(data);
-				break;
-
 			case "roleAssignment":
 				this.handleRoleAssignment(data);
 				break;
 
-			case "gameConfig":
-				this.handleGameConfig(data);
+			case "boardSync":
+				this.handleBoardSync(data);
+				break;
+
+			case "clientCastVote":
+				if (this.isHost) this.handleClientVote(data, conn.peer);
 				break;
 
 			default:
-				console.warn("Unknown message type:", data.type);
+				break;
 		}
 	}
 
-	// Handle join request (host only)
 	handleJoinRequest(data, conn) {
 		const { playerName, peerId } = data;
 
-		// Check if room is full
 		if (this.players.size >= 10) {
 			this.sendToConnection(conn, {
 				type: "error",
@@ -255,7 +221,6 @@ class MultiplayerManager {
 			return;
 		}
 
-		// Add player
 		this.players.set(peerId, {
 			peerId: peerId,
 			name: playerName,
@@ -263,65 +228,56 @@ class MultiplayerManager {
 			ready: true,
 		});
 
-		console.log("Player joined:", playerName);
-
-		// Send confirmation
 		this.sendToConnection(conn, {
 			type: "joinSuccess",
 			roomCode: this.roomCode,
 		});
 
-		// Broadcast updated player list
 		this.broadcastPlayerList();
+
+		// If game already running, re-sync board state
+		if (this.boardState) {
+			this.sendToConnection(conn, {
+				type: "boardSync",
+				boardState: this.boardState,
+				mpVoteSession: this.mpVoteSession,
+			});
+		}
 	}
 
-	// Handle player list update
 	handlePlayerList(data) {
 		this.players.clear();
-		data.players.forEach((player) => {
-			this.players.set(player.peerId, player);
+		data.players.forEach((p) => {
+			this.players.set(p.peerId, p);
 		});
-
-		// Update UI
 		if (window.updateWaitingRoomUI) {
 			window.updateWaitingRoomUI();
 		}
 	}
 
-	// Handle game start
-	handleGameStart(data) {
-		console.log("Game starting with config:", data.config);
-		this.selectedPlayerCount = data.config.playerCount;
-		this.selectedSpecials = new Set(data.config.selectedSpecials);
-		this.gameOptions = data.config.options;
-
-		// Request role assignment
-		if (window.onGameStartReceived) {
-			window.onGameStartReceived();
-		}
-	}
-
-	// Handle role assignment
 	handleRoleAssignment(data) {
 		this.myRole = data.role;
-		console.log("Received role:", this.myRole);
+		this.boardState = data.boardState;
+		this.mpVoteSession = data.mpVoteSession || null;
 
-		// Display role to player
 		if (window.displayPlayerRole) {
-			window.displayPlayerRole(this.myRole);
+			window.displayPlayerRole(this.myRole, data.isLoyaltySwapAlert);
+		}
+		if (window.updateMultiplayerBoardUI) {
+			window.updateMultiplayerBoardUI();
 		}
 	}
 
-	// Handle game configuration (for clients to configure before starting)
-	handleGameConfig(data) {
-		// This could be used to send configuration UI to clients
-		// For now, only host configures
+	handleBoardSync(data) {
+		this.boardState = data.boardState;
+		this.mpVoteSession = data.mpVoteSession || null;
+		if (window.updateMultiplayerBoardUI) {
+			window.updateMultiplayerBoardUI(data.switchedToBoardTab);
+		}
 	}
 
-	// Broadcast player list to all clients (host only)
 	broadcastPlayerList() {
 		if (!this.isHost) return;
-
 		const playerList = Array.from(this.players.values());
 
 		this.connections.forEach((conn) => {
@@ -331,112 +287,334 @@ class MultiplayerManager {
 			});
 		});
 
-		// Update host UI
 		if (window.updateHostUI) {
 			window.updateHostUI();
 		}
 	}
 
-	// Start the game (host only)
+	broadcastBoardSync(switchedToBoardTab = false) {
+		if (!this.isHost) return;
+		const payload = {
+			type: "boardSync",
+			boardState: this.boardState,
+			mpVoteSession: this.getPublicVoteSession(),
+			switchedToBoardTab: switchedToBoardTab,
+		};
+
+		this.connections.forEach((conn) => {
+			this.sendToConnection(conn, payload);
+		});
+
+		if (window.updateMultiplayerBoardUI) {
+			window.updateMultiplayerBoardUI(switchedToBoardTab);
+		}
+	}
+
+	// Sanitize vote session before broadcasting so secret mission votes remain 100% anonymous
+	getPublicVoteSession() {
+		if (!this.mpVoteSession) return null;
+		const s = this.mpVoteSession;
+		const votedPeerIds = Object.keys(s.votesByPeer || {});
+
+		return {
+			type: s.type,
+			status: s.status,
+			round: s.round,
+			teamPeerIds: s.teamPeerIds || [],
+			teamNames: s.teamNames || [],
+			votedPeerIds: votedPeerIds,
+			totalExpected: s.totalExpected || 0,
+			resultSummary: s.status === "completed" ? s.resultSummary : null,
+			loyaltyCard: s.loyaltyCard || null,
+		};
+	}
+
+	// Start game: distribute roles, enrich EVERY role with its complete allies & character tips, and initialize board
 	startGame(config) {
 		if (!this.isHost) return;
 
-		console.log("Starting game with config:", config);
-
-		// Create ordered list of players
 		const playerList = Array.from(this.players.values());
 		const playerNames = playerList.map((p) => p.name);
 
-		// Distribute roles using existing game logic
-		const roles = GameManager.distributeRoles(
+		const rawRoles = GameManager.distributeRoles(
 			playerList.length,
 			config.selectedSpecials,
 			config.options,
 			playerNames
 		);
 
-		console.log("Roles distributed:", roles);
+		const hasInvisible = rawRoles.some((r) => r.key === "agenteinvisivel");
 
-		// Send game start signal to all clients
-		this.connections.forEach((conn) => {
-			this.sendToConnection(conn, {
-				type: "startGame",
-				config: {
-					playerCount: playerList.length,
-					selectedSpecials: config.selectedSpecials,
-					options: config.options,
-				},
-			});
+		// Enrich every role with its specific intel (knownSpies, commanders, otherDesertor, etc.)
+		const enrichedRoles = rawRoles.map((role, idx) => {
+			const enriched = GameManager.enrichRoleWithIntel(role, rawRoles, idx);
+			enriched.peerId = playerList[idx].peerId;
+			enriched.hasInvisibleWarning = hasInvisible;
+			return enriched;
 		});
 
-		// Send individual roles to each player
-		playerList.forEach((player, index) => {
-			const role = roles[index];
+		const hasDesertor =
+			config.selectedSpecials.includes("desertor") ||
+			enrichedRoles.some((r) => r.isDesertor);
 
+		this.boardState = GameManager.createBoardState(
+			playerList.length,
+			hasDesertor,
+			playerNames
+		);
+		this.boardState.playerPeers = playerList.map((p) => ({
+			peerId: p.peerId,
+			name: p.name,
+		}));
+
+		this.mpVoteSession = null;
+
+		this.gameState = {
+			playerCount: playerList.length,
+			roles: enrichedRoles,
+			playerNames: playerNames,
+			config: config,
+		};
+
+		// Send enriched role & boardState to each player
+		playerList.forEach((player, index) => {
+			const role = enrichedRoles[index];
 			if (player.peerId === this.myPeerId) {
-				// Host's role
 				this.myRole = role;
 				if (window.displayPlayerRole) {
-					window.displayPlayerRole(role);
+					window.displayPlayerRole(role, false);
 				}
 			} else {
-				// Send to client
 				const conn = this.connections.get(player.peerId);
 				if (conn) {
 					this.sendToConnection(conn, {
 						type: "roleAssignment",
 						role: role,
+						boardState: this.boardState,
+						mpVoteSession: null,
+						isLoyaltySwapAlert: false,
 					});
 				}
 			}
 		});
 
-		// Save game state
-		this.gameState = {
-			playerCount: playerList.length,
-			roles: roles,
-			playerNames: playerNames,
-		};
+		if (window.updateMultiplayerBoardUI) {
+			window.updateMultiplayerBoardUI(false);
+		}
 	}
 
-	// Send message to host (client only)
+	// Host launches a Team Approval Vote across all connected devices
+	startMultiplayerTeamApproval(selectedTeamPeerIds) {
+		if (!this.isHost || !this.boardState) return;
+		const playerList = Array.from(this.players.values());
+		const teamNames = playerList
+			.filter((p) => selectedTeamPeerIds.includes(p.peerId))
+			.map((p) => p.name);
+
+		this.mpVoteSession = {
+			type: "team_approval",
+			status: "voting",
+			round: this.boardState.currentRound,
+			teamPeerIds: selectedTeamPeerIds,
+			teamNames: teamNames,
+			votesByPeer: {},
+			totalExpected: playerList.length,
+			resultSummary: null,
+		};
+
+		this.broadcastBoardSync(true);
+	}
+
+	// Host launches an Anonymous Mission Vote exclusively for the selected team devices
+	startMultiplayerMissionVote(selectedTeamPeerIds) {
+		if (!this.isHost || !this.boardState) return;
+		const playerList = Array.from(this.players.values());
+		const teamNames = playerList
+			.filter((p) => selectedTeamPeerIds.includes(p.peerId))
+			.map((p) => p.name);
+
+		this.mpVoteSession = {
+			type: "mission_execution",
+			status: "voting",
+			round: this.boardState.currentRound,
+			teamPeerIds: selectedTeamPeerIds,
+			teamNames: teamNames,
+			votesByPeer: {},
+			totalExpected: selectedTeamPeerIds.length,
+			resultSummary: null,
+		};
+
+		this.broadcastBoardSync(true);
+	}
+
+	// Host draws a Desertor Loyalty Card and automatically swaps the 2 Desertors' roles if 'swap' is drawn
+	triggerMultiplayerDesertorDraw() {
+		if (!this.isHost || !this.boardState) return;
+		const card = GameManager.drawDesertorCard(this.boardState);
+
+		if (card.type === "swap" && this.gameState && this.gameState.roles) {
+			const roles = this.gameState.roles;
+			const desertores = roles.filter((r) => r.isDesertor);
+			if (desertores.length === 2) {
+				desertores.forEach((d) => {
+					if (d.faction === "resistance") {
+						d.faction = "spy";
+						d.key = "desertorEspiao";
+						d.description =
+							"🔄 TROCA DE LEALDADE ATIVADA! Você agora pertence aos ESPIÕES!";
+						d.bgImage = "images_back/axis-2-en.jpg";
+					} else {
+						d.faction = "resistance";
+						d.key = "desertorResistencia";
+						d.description =
+							"🔄 TROCA DE LEALDADE ATIVADA! Você agora pertence à RESISTÊNCIA!";
+						d.bgImage = "images_back/ally-2-en.jpg";
+					}
+				});
+
+				// Re-send updated roles to the two Desertor players so their cards update live!
+				roles.forEach((r) => {
+					if (r.isDesertor) {
+						if (r.peerId === this.myPeerId) {
+							this.myRole = r;
+							if (window.displayPlayerRole) {
+								window.displayPlayerRole(r, true);
+							}
+						} else {
+							const conn = this.connections.get(r.peerId);
+							if (conn) {
+								this.sendToConnection(conn, {
+									type: "roleAssignment",
+									role: r,
+									boardState: this.boardState,
+									mpVoteSession: this.getPublicVoteSession(),
+									isLoyaltySwapAlert: true,
+								});
+							}
+						}
+					}
+				});
+			}
+		}
+
+		this.mpVoteSession = {
+			type: "loyalty_alert",
+			status: "completed",
+			round: this.boardState.currentRound,
+			loyaltyCard: card,
+		};
+
+		this.broadcastBoardSync(true);
+	}
+
+	// Client or Host submits a vote
+	submitVote(voteValue) {
+		if (this.isHost) {
+			this.handleClientVote({ vote: voteValue }, this.myPeerId);
+		} else {
+			this.sendToHost({
+				type: "clientCastVote",
+				vote: voteValue,
+			});
+		}
+	}
+
+	handleClientVote(data, peerId) {
+		if (!this.isHost || !this.mpVoteSession || this.mpVoteSession.status !== "voting") {
+			return;
+		}
+
+		const s = this.mpVoteSession;
+
+		if (s.type === "team_approval") {
+			if (!this.players.has(peerId)) return;
+			s.votesByPeer[peerId] = data.vote === "approve" || data.vote === true;
+
+			if (Object.keys(s.votesByPeer).length >= s.totalExpected) {
+				// Tally team approval votes
+				const breakdown = [];
+				let approvals = 0;
+				let rejections = 0;
+
+				this.players.forEach((p) => {
+					const v = !!s.votesByPeer[p.peerId];
+					if (v) approvals++;
+					else rejections++;
+					breakdown.push({ playerName: p.name, approved: v });
+				});
+
+				const isApproved = approvals > rejections;
+				const outcome = GameManager.registerTeamVoteResult(
+					this.boardState,
+					isApproved
+				);
+
+				s.status = "completed";
+				s.resultSummary = {
+					approved: isApproved,
+					approvals,
+					rejections,
+					breakdown,
+					message: outcome.message,
+					fiveRejectionsTriggered: outcome.action === "five_rejections_point",
+				};
+			}
+
+			this.broadcastBoardSync(false);
+		} else if (s.type === "mission_execution") {
+			if (!s.teamPeerIds.includes(peerId)) return;
+			s.votesByPeer[peerId] = data.vote === "fail" ? "fail" : "success";
+
+			if (Object.keys(s.votesByPeer).length >= s.totalExpected) {
+				// Shuffle anonymous mission cards
+				const rawVotes = Object.values(s.votesByPeer);
+				const shuffledCards = GameManager.shuffleArray(rawVotes);
+				const failsCount = shuffledCards.filter((v) => v === "fail").length;
+				const successCount = shuffledCards.filter((v) => v === "success").length;
+				const currentRoundObj =
+					this.boardState.rounds[this.boardState.currentRound - 1];
+				const requiredFails =
+					currentRoundObj && currentRoundObj.requiresTwoFails ? 2 : 1;
+				const missionSucceeded = failsCount < requiredFails;
+				const winningFaction = missionSucceeded ? "resistance" : "spy";
+
+				GameManager.recordRoundOutcome(
+					this.boardState,
+					winningFaction,
+					failsCount
+				);
+
+				s.status = "completed";
+				s.resultSummary = {
+					missionSucceeded,
+					winningFaction,
+					shuffledCards,
+					failsCount,
+					successCount,
+				};
+			}
+
+			this.broadcastBoardSync(false);
+		}
+	}
+
 	sendToHost(data) {
 		if (this.hostConnection && this.hostConnection.open) {
 			this.hostConnection.send(data);
 		}
 	}
 
-	// Send message to specific connection
 	sendToConnection(conn, data) {
 		if (conn && conn.open) {
 			conn.send(data);
 		}
 	}
 
-	// Generate room code
-	generateRoomCode() {
-		// Use the peer ID as room code for direct connection
-		return this.myPeerId;
-	}
-
-	// Disconnect and cleanup
 	disconnect() {
-		// Close all connections
-		this.connections.forEach((conn) => {
-			conn.close();
-		});
+		this.connections.forEach((conn) => conn.close());
+		if (this.hostConnection) this.hostConnection.close();
+		if (this.peer) this.peer.destroy();
 
-		// Close host connection if client
-		if (this.hostConnection) {
-			this.hostConnection.close();
-		}
-
-		// Destroy peer
-		if (this.peer) {
-			this.peer.destroy();
-		}
-
-		// Reset state
 		this.connections.clear();
 		this.players.clear();
 		this.isHost = false;
@@ -445,32 +623,29 @@ class MultiplayerManager {
 		this.myPeerId = null;
 		this.gameState = null;
 		this.myRole = null;
+		this.boardState = null;
+		this.mpVoteSession = null;
 	}
 
-	// Get player count
 	getPlayerCount() {
 		return this.players.size;
 	}
 
-	// Check if minimum players met
 	canStartGame() {
 		return this.isHost && this.players.size >= 5 && this.players.size <= 10;
 	}
 }
 
-// Global instance
 const multiplayerManager = new MultiplayerManager();
 
-// UI Management
+// UI Logic
 document.addEventListener("DOMContentLoaded", () => {
-	// Screen elements
 	const selectionScreen = document.getElementById("selectionScreen");
 	const joinScreen = document.getElementById("joinScreen");
 	const hostScreen = document.getElementById("hostScreen");
 	const waitingRoom = document.getElementById("waitingRoom");
 	const roleRevealScreen = document.getElementById("roleRevealScreen");
 
-	// Buttons
 	const btnCreateRoom = document.getElementById("btnCreateRoom");
 	const btnJoinRoom = document.getElementById("btnJoinRoom");
 	const btnConnect = document.getElementById("btnConnect");
@@ -480,9 +655,11 @@ document.addEventListener("DOMContentLoaded", () => {
 	const btnLeaveRoom = document.getElementById("btnLeaveRoom");
 	const btnBackToLobby = document.getElementById("btnBackToLobby");
 
-	// Inputs
 	const playerNameInput = document.getElementById("playerName");
 	const roomCodeInput = document.getElementById("roomCode");
+
+	// Selected team members on Host Panel
+	let hostSelectedTeamPeers = new Set();
 
 	// Load saved player name
 	const savedName = localStorage.getItem("playerName");
@@ -490,145 +667,141 @@ document.addEventListener("DOMContentLoaded", () => {
 		playerNameInput.value = savedName;
 	}
 
+	// Tabs inside active multiplayer game
+	const tabBtnRole = document.getElementById("tabBtnRole");
+	const tabBtnBoard = document.getElementById("tabBtnBoard");
+	const mpTabRoleContent = document.getElementById("mpTabRoleContent");
+	const mpTabBoardContent = document.getElementById("mpTabBoardContent");
+	const boardActionBadge = document.getElementById("boardActionBadge");
+
+	function switchMpTab(tabName) {
+		if (tabName === "board") {
+			tabBtnBoard.classList.add("active");
+			tabBtnRole.classList.remove("active");
+			mpTabBoardContent.classList.remove("hidden");
+			mpTabRoleContent.classList.add("hidden");
+			boardActionBadge.classList.add("hidden");
+		} else {
+			tabBtnRole.classList.add("active");
+			tabBtnBoard.classList.remove("active");
+			mpTabRoleContent.classList.remove("hidden");
+			mpTabBoardContent.classList.add("hidden");
+		}
+	}
+
+	tabBtnRole.addEventListener("click", () => switchMpTab("role"));
+	tabBtnBoard.addEventListener("click", () => switchMpTab("board"));
+
+	// Card Privacy Toggle
+	const btnToggleCardPrivacy = document.getElementById("btnToggleCardPrivacy");
+	const btnShowCardAgain = document.getElementById("btnShowCardAgain");
+	const playerRoleCard = document.getElementById("playerRoleCard");
+	const playerRoleHiddenCover = document.getElementById("playerRoleHiddenCover");
+
+	btnToggleCardPrivacy.addEventListener("click", () => {
+		playerRoleCard.classList.add("hidden");
+		playerRoleHiddenCover.classList.remove("hidden");
+		btnToggleCardPrivacy.classList.add("hidden");
+	});
+
+	btnShowCardAgain.addEventListener("click", () => {
+		playerRoleCard.classList.remove("hidden");
+		playerRoleHiddenCover.classList.add("hidden");
+		btnToggleCardPrivacy.classList.remove("hidden");
+	});
+
 	// Create Room
 	btnCreateRoom.addEventListener("click", async () => {
 		const playerName = playerNameInput.value.trim();
-
 		if (!playerName) {
-			alert("Por favor, digite seu nome!");
+			alert("Por favor, digite seu nome de agente!");
 			return;
 		}
-
-		// Save player name
 		localStorage.setItem("playerName", playerName);
 
 		try {
-			showLoading("Criando sala...");
+			btnCreateRoom.disabled = true;
+			btnCreateRoom.textContent = "⏳ Criando Sala...";
 
 			await multiplayerManager.init(playerName);
 			const roomCode = multiplayerManager.createRoom();
 
-			hideLoading();
+			btnCreateRoom.disabled = false;
+			btnCreateRoom.textContent = "🏠 Criar Sala (Host)";
 
-			// Show host screen
 			showScreen(hostScreen);
 			displayRoomCode(roomCode);
 			generateQRCode(roomCode);
 			updateHostUI();
 		} catch (error) {
-			hideLoading();
+			btnCreateRoom.disabled = false;
+			btnCreateRoom.textContent = "🏠 Criar Sala (Host)";
 			alert("Erro ao criar sala: " + error.message);
-			console.error(error);
 		}
 	});
 
-	// Join Room
+	// Go to Join Room Screen
 	btnJoinRoom.addEventListener("click", () => {
 		const playerName = playerNameInput.value.trim();
-
 		if (!playerName) {
-			alert("Por favor, digite seu nome!");
+			alert("Por favor, digite seu nome antes de entrar na sala!");
 			return;
 		}
-
-		// Save player name
 		localStorage.setItem("playerName", playerName);
-
 		showScreen(joinScreen);
 	});
 
-	// Connect to Room
+	// Connect to Host Room
 	btnConnect.addEventListener("click", async () => {
-		const roomCode = roomCodeInput.value.trim().toUpperCase();
-
+		const roomCode = roomCodeInput.value.trim();
 		if (!roomCode) {
-			alert("Por favor, digite o código da sala!");
+			alert("Por favor, digite ou cole o código da sala!");
 			return;
 		}
 
-		const playerName = playerNameInput.value.trim();
+		const playerName = playerNameInput.value.trim() || "Agente";
 
 		try {
-			showJoinStatus("Inicializando...", "connecting");
+			btnConnect.disabled = true;
+			showJoinStatus("Inicializando comunicação criptografada...", "connecting");
 
 			await multiplayerManager.init(playerName);
-
-			showJoinStatus("Conectando à sala...", "connecting");
+			showJoinStatus("Conectando à sala de operações...", "connecting");
 
 			await multiplayerManager.joinRoom(roomCode);
 
+			btnConnect.disabled = false;
 			hideJoinStatus();
 
-			// Show waiting room
 			showScreen(waitingRoom);
-			document.getElementById("waitingRoomCode").textContent = roomCode;
+			document.getElementById("waitingRoomCode").textContent =
+				multiplayerManager.roomCode;
 			updateWaitingRoomUI();
 		} catch (error) {
-			const errorMsg = error.message || "Erro desconhecido";
-			showJoinStatus(errorMsg, "disconnected");
-			console.error(error);
-
-			// Add retry button
-			const statusDiv = document.getElementById("joinStatus");
-			const retryBtn = document.createElement("button");
-			retryBtn.textContent = "Tentar Novamente";
-			retryBtn.className = "btn-secondary";
-			retryBtn.style.marginTop = "10px";
-			retryBtn.onclick = () => {
-				hideJoinStatus();
-				multiplayerManager.disconnect();
-			};
-
-			// Check if retry button already exists
-			if (!statusDiv.querySelector("button")) {
-				statusDiv.appendChild(retryBtn);
-			}
+			btnConnect.disabled = false;
+			showJoinStatus(error.message || "Falha ao conectar", "disconnected");
 		}
 	});
 
-	// Back from Join
 	btnBackFromJoin.addEventListener("click", () => {
 		showScreen(selectionScreen);
-		roomCodeInput.value = "";
 		hideJoinStatus();
 	});
 
-	// Cancel Room (Host)
 	btnCancelRoom.addEventListener("click", () => {
-		if (confirm("Deseja realmente cancelar a sala?")) {
-			multiplayerManager.disconnect();
-			showScreen(selectionScreen);
-		}
+		multiplayerManager.disconnect();
+		showScreen(selectionScreen);
 	});
 
-	// Leave Room (Client)
 	btnLeaveRoom.addEventListener("click", () => {
-		if (confirm("Deseja realmente sair da sala?")) {
-			multiplayerManager.disconnect();
-			showScreen(selectionScreen);
-		}
+		multiplayerManager.disconnect();
+		showScreen(selectionScreen);
 	});
 
-	// Start Game (Host)
 	btnStartGame.addEventListener("click", () => {
-		// Get game configuration
-		const playerCount = multiplayerManager.getPlayerCount();
-
-		// For now, use default configuration
-		// In future, add configuration UI for host
-		const config = {
-			selectedSpecials: [], // Can be configured
-			options: {
-				comandanteFalsoKnows: false,
-				desertoresKnowEachOther: false,
-			},
-		};
-
-		// Show configuration modal (to be implemented)
-		showGameConfigModal(config);
+		showGameConfigModal();
 	});
 
-	// Back to Lobby
 	btnBackToLobby.addEventListener("click", () => {
 		if (multiplayerManager.isHost) {
 			showScreen(hostScreen);
@@ -636,8 +809,6 @@ document.addEventListener("DOMContentLoaded", () => {
 			showScreen(waitingRoom);
 		}
 	});
-
-	// Helper Functions
 
 	function showScreen(screen) {
 		[
@@ -648,157 +819,91 @@ document.addEventListener("DOMContentLoaded", () => {
 			roleRevealScreen,
 		].forEach((s) => s.classList.add("hidden"));
 		screen.classList.remove("hidden");
-	}
-
-	function showLoading(message) {
-		// Simple alert for now - can be improved with modal
-		console.log("Loading:", message);
-	}
-
-	function hideLoading() {
-		console.log("Loading complete");
+		window.scrollTo({ top: 0, behavior: "smooth" });
 	}
 
 	function showJoinStatus(message, type = "connecting") {
 		const statusDiv = document.getElementById("joinStatus");
-		statusDiv.classList.remove("hidden", "connecting", "connected", "error");
+		statusDiv.classList.remove("hidden", "connecting", "connected", "disconnected");
 		statusDiv.classList.add(type);
 		statusDiv.innerHTML = `<p>${message}</p>`;
 	}
 
 	function hideJoinStatus() {
-		const statusDiv = document.getElementById("joinStatus");
-		statusDiv.classList.add("hidden");
+		document.getElementById("joinStatus").classList.add("hidden");
 	}
 
 	function displayRoomCode(code) {
-		// IMPORTANTE: Sempre mostrar em minúsculas (PeerJS é case-sensitive)
 		const normalizedCode = code.toLowerCase();
 		const displayElement = document.getElementById("displayRoomCode");
 		displayElement.textContent = normalizedCode;
 
-		// Add copy functionality
 		const btnCopy = document.getElementById("btnCopyCode");
+		const btnShareLink = document.getElementById("btnShareLink");
 		const copyFeedback = document.getElementById("copyFeedback");
 
-		if (btnCopy) {
-			// Remove existing event listeners to avoid duplicates
-			const newBtnCopy = btnCopy.cloneNode(true);
-			btnCopy.parentNode.replaceChild(newBtnCopy, btnCopy);
-
-			newBtnCopy.addEventListener("click", async () => {
-				try {
-					// Try using modern clipboard API
-					if (navigator.clipboard && navigator.clipboard.writeText) {
-						await navigator.clipboard.writeText(normalizedCode);
-						showCopySuccess(newBtnCopy, copyFeedback);
-					} else {
-						// Fallback for older browsers
-						copyToClipboardFallback(normalizedCode);
-						showCopySuccess(newBtnCopy, copyFeedback);
-					}
-				} catch (error) {
-					console.error("Error copying code:", error);
-					// Try fallback method
-					try {
-						copyToClipboardFallback(normalizedCode);
-						showCopySuccess(newBtnCopy, copyFeedback);
-					} catch (fallbackError) {
-						console.error("Fallback copy failed:", fallbackError);
-						alert(
-							"Não foi possível copiar automaticamente. Código: " +
-								normalizedCode
-						);
-					}
+		const copyText = async (text) => {
+			try {
+				if (navigator.clipboard && navigator.clipboard.writeText) {
+					await navigator.clipboard.writeText(text);
+				} else {
+					const textarea = document.createElement("textarea");
+					textarea.value = text;
+					textarea.style.position = "fixed";
+					textarea.style.opacity = "0";
+					document.body.appendChild(textarea);
+					textarea.select();
+					document.execCommand("copy");
+					document.body.removeChild(textarea);
 				}
-			});
-
-			// Also allow clicking the code itself to copy
-			displayElement.addEventListener("click", () => {
-				newBtnCopy.click();
-			});
-			displayElement.style.cursor = "pointer";
-		}
-	}
-
-	// Show copy success feedback
-	function showCopySuccess(button, feedback) {
-		// Change button appearance
-		button.textContent = "✅ Copiado!";
-		button.classList.add("copied");
-
-		// Show feedback message
-		if (feedback) {
-			feedback.classList.add("show");
-		}
-
-		// Reset after 3 seconds
-		setTimeout(() => {
-			button.textContent = "📋 Copiar Código";
-			button.classList.remove("copied");
-			if (feedback) {
-				feedback.classList.remove("show");
+				if (copyFeedback) {
+					copyFeedback.classList.add("show");
+					setTimeout(() => copyFeedback.classList.remove("show"), 3000);
+				}
+			} catch (e) {
+				alert("Código: " + text);
 			}
-		}, 3000);
-	}
+		};
 
-	// Fallback copy method for older browsers
-	function copyToClipboardFallback(text) {
-		// Create temporary textarea
-		const textarea = document.createElement("textarea");
-		textarea.value = text;
-		textarea.style.position = "fixed";
-		textarea.style.top = "0";
-		textarea.style.left = "0";
-		textarea.style.opacity = "0";
-		document.body.appendChild(textarea);
+		btnCopy.onclick = () => copyText(normalizedCode);
+		displayElement.onclick = () => copyText(normalizedCode);
 
-		// Select and copy
-		textarea.focus();
-		textarea.select();
-
-		try {
-			const successful = document.execCommand("copy");
-			if (!successful) {
-				throw new Error("Copy command failed");
-			}
-		} finally {
-			document.body.removeChild(textarea);
+		if (btnShareLink) {
+			btnShareLink.onclick = () => {
+				const joinURL = `${window.location.origin}${window.location.pathname}?join=${normalizedCode}`;
+				copyText(joinURL);
+			};
 		}
 	}
 
 	function generateQRCode(roomCode) {
 		const container = document.getElementById("qrCodeContainer");
-		container.innerHTML = ""; // Clear previous QR code
-
-		// IMPORTANTE: Normalizar para minúsculas (PeerJS é case-sensitive)
+		container.innerHTML = "";
 		const normalizedCode = roomCode.toLowerCase();
-
-		// Create QR code with room join URL
 		const joinURL = `${window.location.origin}${window.location.pathname}?join=${normalizedCode}`;
 
 		try {
-			new QRCode(container, {
+			const qrBox = document.createElement("div");
+			qrBox.className = "qr-canvas-box";
+			container.appendChild(qrBox);
+
+			new QRCode(qrBox, {
 				text: joinURL,
-				width: 200,
-				height: 200,
-				colorDark: "#4a90e2",
-				colorLight: "#ffffff",
-				correctLevel: QRCode.CorrectLevel.H,
+				width: 180,
+				height: 180,
+				colorDark: "#0b141a",
+				colorLight: "#f4efe6",
+				correctLevel: QRCode.CorrectLevel.M,
 			});
 
 			const label = document.createElement("p");
-			label.textContent = "Escaneie para entrar rapidamente";
-			label.style.marginTop = "10px";
-			label.style.fontSize = "0.9rem";
-			label.style.color = "#7f8c8d";
+			label.textContent = "📱 Escaneie com a câmera para entrar direto na sala";
 			container.appendChild(label);
 		} catch (error) {
 			console.error("Error generating QR code:", error);
 		}
 	}
 
-	// Update Host UI
 	window.updateHostUI = function () {
 		const playerList = document.getElementById("playerList");
 		const playerCount = document.getElementById("playerCount");
@@ -806,33 +911,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
 		playerList.innerHTML = "";
 		playerCount.textContent = multiplayerManager.getPlayerCount();
-
-		// Enable start button if enough players
 		btnStart.disabled = !multiplayerManager.canStartGame();
 
-		// Display players
-		multiplayerManager.players.forEach((player) => {
+		multiplayerManager.players.forEach((player, idx) => {
 			const li = document.createElement("li");
-			li.className = "player-item";
-
-			if (player.isHost) {
-				li.classList.add("host");
-			} else {
-				li.classList.add("ready");
-			}
-
+			li.className = `player-item ${player.isHost ? "host" : "ready"}`;
 			li.innerHTML = `
-                <span><strong>${player.name}</strong></span>
-                <span class="status-badge ${player.isHost ? "host" : "ready"}">
-                    ${player.isHost ? "👑 Host" : "✓ Pronto"}
-                </span>
-            `;
-
+				<span><strong>${player.name}</strong></span>
+				<span class="status-badge ${player.isHost ? "host" : "ready"}">
+					${player.isHost ? "👑 Host" : "✓ Conectado"}
+				</span>
+			`;
 			playerList.appendChild(li);
 		});
 	};
 
-	// Update Waiting Room UI
 	window.updateWaitingRoomUI = function () {
 		const playerList = document.getElementById("waitingPlayerList");
 		const playerCount = document.getElementById("waitingPlayerCount");
@@ -840,254 +933,545 @@ document.addEventListener("DOMContentLoaded", () => {
 		playerList.innerHTML = "";
 		playerCount.textContent = multiplayerManager.getPlayerCount();
 
-		// Display players
 		multiplayerManager.players.forEach((player) => {
 			const li = document.createElement("li");
-			li.className = "player-item";
-
-			if (player.isHost) {
-				li.classList.add("host");
-			} else {
-				li.classList.add("ready");
-			}
-
+			li.className = `player-item ${player.isHost ? "host" : "ready"}`;
 			li.innerHTML = `
-                <span><strong>${player.name}</strong></span>
-                <span class="status-badge ${player.isHost ? "host" : "ready"}">
-                    ${player.isHost ? "👑 Host" : "✓ Pronto"}
-                </span>
-            `;
-
+				<span><strong>${player.name}</strong></span>
+				<span class="status-badge ${player.isHost ? "host" : "ready"}">
+					${player.isHost ? "👑 Host" : "✓ Conectado"}
+				</span>
+			`;
 			playerList.appendChild(li);
 		});
 	};
 
-	// Handle game start received (client)
-	window.onGameStartReceived = function () {
-		console.log("Game is starting...");
-		// Role will be sent separately
-	};
-
-	// Display player role
-	window.displayPlayerRole = function (role) {
+	// Display Player Role Card with full allies list & character tips!
+	window.displayPlayerRole = function (role, isLoyaltySwapAlert = false) {
 		const roleCard = document.getElementById("playerRoleCard");
+		roleCard.classList.remove("hidden");
+		playerRoleHiddenCover.classList.add("hidden");
+		btnToggleCardPrivacy.classList.remove("hidden");
 
-		// Use existing role display logic from reveal.js
-		displayRoleCard(roleCard, role);
+		roleCard.className = "role-card " + role.faction;
+		const bgImage =
+			role.bgImage ||
+			(role.faction === "resistance"
+				? "images_back/ally-1-en.jpg"
+				: "images_back/axis-1-en.jpg");
+		roleCard.style.backgroundImage = `url('${bgImage}')`;
 
-		// Show role screen
+		// Build full allies & tactical tips HTML via shared GameManager method
+		const detailsHTML = GameManager.buildRoleInfoHTML(role);
+
+		roleCard.innerHTML = `
+			<div class="role-header">
+				<div class="player-badge" style="margin-bottom: 10px;">
+					<span class="badge-label">Agente:</span>
+					<span class="badge-number">${role.playerName || multiplayerManager.myPlayerName}</span>
+				</div>
+				<h2 class="role-title">${role.displayName}</h2>
+				<div class="faction-badge ${role.faction}">
+					${role.faction === "resistance" ? "Resistência" : "Espião"}
+				</div>
+			</div>
+			<div class="role-info">
+				${detailsHTML}
+			</div>
+		`;
+
 		showScreen(roleRevealScreen);
+
+		if (isLoyaltySwapAlert) {
+			switchMpTab("role");
+			alert(
+				"🔄 TROCA DE LEALDADE! Uma carta de Troca de Lealdade do Desertor foi sorteada! Confira sua nova facção na sua carta!"
+			);
+		} else {
+			switchMpTab("role");
+		}
 	};
 
-	// Display role card (similar to reveal.js)
-	function displayRoleCard(container, role) {
-		container.innerHTML = "";
-		container.className = "role-card " + role.faction;
+	// Update Live Tactical Board & Online Voting UI
+	window.updateMultiplayerBoardUI = function (autoNotifyTab = false) {
+		const bs = multiplayerManager.boardState;
+		if (!bs) return;
 
-		// Set background image based on faction
-		if (role.faction === "resistance") {
-			const resistanceImages = [
-				"images_back/ally-1-en.jpg",
-				"images_back/ally-2-en.jpg",
-				"images_back/ally-3-en.jpg",
-				"images_back/ally-4-en.jpg",
-				"images_back/ally-5.jpg",
-				"images_back/ally-6-en.jpg",
-			];
-			const randomImage =
-				resistanceImages[Math.floor(Math.random() * resistanceImages.length)];
-			container.style.backgroundImage = `url('${randomImage}')`;
-		} else if (role.faction === "spy") {
-			const spyImages = [
-				"images_back/axis-1-en.jpg",
-				"images_back/axis-2-en.jpg",
-				"images_back/axis-3-en.jpg",
-				"images_back/axis-4.jpg",
-			];
-			const randomImage =
-				spyImages[Math.floor(Math.random() * spyImages.length)];
-			container.style.backgroundImage = `url('${randomImage}')`;
+		if (autoNotifyTab && mpTabBoardContent.classList.contains("hidden")) {
+			boardActionBadge.classList.remove("hidden");
 		}
 
-		const html = `
-            <div class="role-content">
-                <div class="role-icon">${role.displayName.split(" ")[0]}</div>
-                <h2 class="role-title">${role.displayName}</h2>
-                <div class="faction-badge ${role.faction}">
-                    ${role.faction === "resistance" ? "Resistência" : "Espião"}
-                </div>
-                <div class="role-info">
-                    <p>${role.description}</p>
-                    ${generateRoleSpecificInfo(role)}
-                </div>
-            </div>
-        `;
+		// 1. Render shared Mini Tactical Board
+		const boardMount = document.getElementById("mpTacticalBoardMount");
+		const boardCtrl = new BoardUIController({
+			container: boardMount,
+			boardState: bs,
+			roles: multiplayerManager.gameState
+				? multiplayerManager.gameState.roles
+				: null,
+			mode: "multiplayer-client", // Use custom host panel below for online voting
+		});
+		boardCtrl.render();
 
-		container.innerHTML = html;
-	}
+		// 2. Render Live Interaction Box (Active Vote or Result for all players)
+		renderLiveVoteInteractionBox(bs);
 
-	// Generate role-specific information
-	function generateRoleSpecificInfo(role) {
-		let html = "";
+		// 3. Render Host Control Panel if Host
+		const hostPanel = document.getElementById("mpHostControlsPanel");
+		if (multiplayerManager.isHost) {
+			hostPanel.classList.remove("hidden");
+			renderHostControlPanel(hostPanel, bs);
+		} else {
+			hostPanel.classList.add("hidden");
+		}
+	};
 
-		// Add spy list if applicable
-		if (role.knowsSpies && !role.isBlind && role.faction === "spy") {
-			// Note: In multiplayer, we can't show other players directly
-			// This information will need to be handled differently
-			html += `
-                <div class="info-box">
-                    <p><strong>ℹ️ Informação:</strong> Você conhece os outros espiões. Durante a fase de revelação, todos os espiões devem se revelar entre si.</p>
-                </div>
-            `;
+	function renderLiveVoteInteractionBox(bs) {
+		const box = document.getElementById("mpLiveInteractionBox");
+		const session = multiplayerManager.isHost
+			? multiplayerManager.getPublicVoteSession()
+			: multiplayerManager.mpVoteSession;
+
+		if (!session) {
+			box.innerHTML = "";
+			return;
 		}
 
-		if (role.isBlind) {
-			html += `
-                <div class="info-box warning">
-                    <p><strong>⚠️ Atenção:</strong> Você NÃO conhece os outros espiões e eles NÃO conhecem você!</p>
-                    <p><strong>⚠️ Importante:</strong> O Comandante SABE quem você é!</p>
-                </div>
-            `;
-		}
+		const myPeerId = multiplayerManager.myPeerId;
+		const hasVoted =
+			session.votedPeerIds && session.votedPeerIds.includes(myPeerId);
 
-		if (role.key === "comandante") {
-			html += `
-                <div class="info-box">
-                    <p><strong>🔍 Poder Especial:</strong> Durante a fase de revelação, todos os espiões (exceto Agente Invisível) devem se revelar para você!</p>
-                </div>
-            `;
-		}
+		// CASE 1: Team Approval Vote
+		if (session.type === "team_approval") {
+			if (session.status === "voting") {
+				box.innerHTML = `
+					<div class="mp-vote-live-card">
+						<span class="pass-badge">🗳️ VOTAÇÃO DE EQUIPE EM ANDAMENTO (MISSÃO ${session.round})</span>
+						<h3>Equipe Proposta: ${session.teamNames.join(", ")}</h3>
+						<p class="info-text">Votos computados: <strong>${session.votedPeerIds.length} / ${session.totalExpected}</strong></p>
+						${
+							hasVoted
+								? `<div class="connection-status connected"><p>✅ Seu voto foi registrado! Aguardando os demais agentes...</p></div>`
+								: `<div class="vote-cards-row">
+										<button type="button" class="vote-card-btn approve" id="btnMpVoteApprove">
+											<span class="vote-card-icon">✅</span>
+											<span class="vote-card-title">APROVAR EQUIPE</span>
+										</button>
+										<button type="button" class="vote-card-btn reject" id="btnMpVoteReject">
+											<span class="vote-card-icon">❌</span>
+											<span class="vote-card-title">REJEITAR EQUIPE</span>
+										</button>
+								   </div>`
+						}
+					</div>
+				`;
 
-		return html;
-	}
-
-	// Game Configuration Modal (for host)
-	function showGameConfigModal(config) {
-		// Create a modal for game configuration
-		const modal = document.createElement("div");
-		modal.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            padding: 20px;
-        `;
-
-		const content = document.createElement("div");
-		content.style.cssText = `
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            max-width: 500px;
-            width: 100%;
-            max-height: 80vh;
-            overflow-y: auto;
-        `;
-
-		content.innerHTML = `
-            <h2>Configuração do Jogo</h2>
-            <p class="info-text">Selecione os personagens especiais para esta partida:</p>
-            
-            <div class="characters-grid" style="margin: 20px 0;">
-                <label class="character-option resistance">
-                    <input type="checkbox" id="modal-comandante" value="comandante">
-                    <div class="character-card">
-                        <h3>👑 Comandante</h3>
-                        <span class="faction">Resistência</span>
-                    </div>
-                </label>
-
-                <label class="character-option resistance">
-                    <input type="checkbox" id="modal-guardacostas" value="guardacostas">
-                    <div class="character-card">
-                        <h3>🛡️ Guarda-Costas</h3>
-                        <span class="faction">Resistência</span>
-                    </div>
-                </label>
-
-                <label class="character-option spy">
-                    <input type="checkbox" id="modal-assassino" value="assassino">
-                    <div class="character-card">
-                        <h3>🗡️ Assassino</h3>
-                        <span class="faction">Espião</span>
-                    </div>
-                </label>
-
-                <label class="character-option spy">
-                    <input type="checkbox" id="modal-espiaocego" value="espiaocego">
-                    <div class="character-card">
-                        <h3>👁️ Espião Cego</h3>
-                        <span class="faction">Espião</span>
-                    </div>
-                </label>
-
-                <label class="character-option spy">
-                    <input type="checkbox" id="modal-agenteinvisivel" value="agenteinvisivel">
-                    <div class="character-card">
-                        <h3>👻 Agente Invisível</h3>
-                        <span class="faction">Espião</span>
-                    </div>
-                </label>
-
-                <label class="character-option spy">
-                    <input type="checkbox" id="modal-comandantefalso" value="comandantefalso">
-                    <div class="character-card">
-                        <h3>👹 Comandante Falso</h3>
-                        <span class="faction">Espião</span>
-                    </div>
-                </label>
-            </div>
-
-            <div class="btn-group" style="margin-top: 30px;">
-                <button class="btn-secondary" id="modal-cancel">Cancelar</button>
-                <button class="btn-primary" id="modal-start">Iniciar Jogo</button>
-            </div>
-        `;
-
-		modal.appendChild(content);
-		document.body.appendChild(modal);
-
-		// Handle modal actions
-		const selectedSpecials = new Set();
-
-		content.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
-			checkbox.addEventListener("change", () => {
-				if (checkbox.checked) {
-					selectedSpecials.add(checkbox.value);
-				} else {
-					selectedSpecials.delete(checkbox.value);
+				if (!hasVoted) {
+					document
+						.getElementById("btnMpVoteApprove")
+						.addEventListener("click", () =>
+							multiplayerManager.submitVote("approve")
+						);
+					document
+						.getElementById("btnMpVoteReject")
+						.addEventListener("click", () =>
+							multiplayerManager.submitVote("reject")
+						);
 				}
+			} else if (session.status === "completed" && session.resultSummary) {
+				const sum = session.resultSummary;
+				box.innerHTML = `
+					<div class="mp-vote-live-card">
+						<div class="vote-tally-header ${sum.approved ? "approved" : "rejected"}">
+							<h4>${sum.approved ? "✅ EQUIPE APROVADA!" : "❌ EQUIPE REJEITADA!"}</h4>
+							<p>${sum.approvals} Aprovação(ões) × ${sum.rejections} Rejeição(ões)</p>
+							<p style="margin-top:6px;font-weight:bold;">${sum.message}</p>
+						</div>
+						<ul class="team-votes-breakdown">
+							${sum.breakdown
+								.map(
+									(b) => `
+								<li class="${b.approved ? "v-app" : "v-rej"}">
+									<span>${b.playerName}</span>
+									<strong>${b.approved ? "✅ Aprovou" : "❌ Rejeitou"}</strong>
+								</li>
+							`
+								)
+								.join("")}
+						</ul>
+					</div>
+				`;
+			}
+			return;
+		}
+
+		// CASE 2: Secret Mission Execution Vote
+		if (session.type === "mission_execution") {
+			const isOnMissionTeam =
+				session.teamPeerIds && session.teamPeerIds.includes(myPeerId);
+
+			if (session.status === "voting") {
+				box.innerHTML = `
+					<div class="mp-vote-live-card">
+						<span class="pass-badge">🕵️ MISSÃO ${session.round} EM EXECUÇÃO SECRETA</span>
+						<h3>Agentes em Missão: ${session.teamNames.join(", ")}</h3>
+						<p class="info-text">Cartas secretas enviadas: <strong>${session.votedPeerIds.length} / ${session.totalExpected}</strong></p>
+						${
+							!isOnMissionTeam
+								? `<div class="info-box"><p>⏳ Você não está escalado nesta missão. Aguarde os agentes escalados votarem secretamente.</p></div>`
+								: hasVoted
+								? `<div class="connection-status connected"><p>🔒 Sua carta secreta de missão foi enviada! Aguardando os demais integrantes...</p></div>`
+								: `<div class="vote-cards-row">
+										<button type="button" class="vote-card-btn success-card" id="btnMpMissionSuccess">
+											<span class="vote-card-icon">🛡️</span>
+											<span class="vote-card-title">SUCESSO</span>
+											<span class="vote-card-sub">Cumprir a Missão</span>
+										</button>
+										<button type="button" class="vote-card-btn fail-card" id="btnMpMissionFail">
+											<span class="vote-card-icon">🗡️</span>
+											<span class="vote-card-title">SABOTAR</span>
+											<span class="vote-card-sub">Falhar a Missão</span>
+										</button>
+								   </div>`
+						}
+					</div>
+				`;
+
+				if (isOnMissionTeam && !hasVoted) {
+					document
+						.getElementById("btnMpMissionSuccess")
+						.addEventListener("click", () =>
+							multiplayerManager.submitVote("success")
+						);
+					document
+						.getElementById("btnMpMissionFail")
+						.addEventListener("click", () =>
+							multiplayerManager.submitVote("fail")
+						);
+				}
+			} else if (session.status === "completed" && session.resultSummary) {
+				const sum = session.resultSummary;
+				box.innerHTML = `
+					<div class="mp-vote-live-card">
+						<h3>🎴 Resultado Anônimo da Missão ${session.round}</h3>
+						<div class="revealed-cards-grid">
+							${sum.shuffledCards
+								.map(
+									(v) => `
+								<div class="revealed-mission-card ${v}">
+									<span class="rm-icon">${v === "success" ? "🛡️" : "🗡️"}</span>
+									<span class="rm-label">${v === "success" ? "SUCESSO" : "SABOTAGEM"}</span>
+								</div>
+							`
+								)
+								.join("")}
+						</div>
+						<div class="mission-verdict-banner ${sum.missionSucceeded ? "res" : "spy"}">
+							<h4>${
+								sum.missionSucceeded
+									? "🛡️ MISSÃO CUMPRIDA! PONTO PARA A RESISTÊNCIA!"
+									: "🗡️ MISSÃO SABOTADA! PONTO PARA OS ESPIÕES!"
+							}</h4>
+							<p>${sum.successCount} Sucesso(s) • ${sum.failsCount} Sabotagem(ns)</p>
+						</div>
+					</div>
+				`;
+			}
+			return;
+		}
+
+		// CASE 3: Desertor Loyalty Card Alert
+		if (session.type === "loyalty_alert" && session.loyaltyCard) {
+			const card = session.loyaltyCard;
+			const isSwap = card.type === "swap";
+			box.innerHTML = `
+				<div class="mp-vote-live-card loyalty-reveal-box ${isSwap ? "swap-alert" : "no-change"}">
+					<span class="pass-badge">🃏 CARTA DO DESERTOR SORTEADA (RODADA ${card.round})</span>
+					<div class="loyalty-card-visual ${isSwap ? "swap" : "keep"}">
+						<div class="lc-icon">${isSwap ? "🔄" : "🛡️"}</div>
+						<h3>${card.title}</h3>
+						<p>${card.subtitle}</p>
+					</div>
+				</div>
+			`;
+		}
+	}
+
+	function renderHostControlPanel(container, bs) {
+		if (bs.gameOver) {
+			container.innerHTML = `
+				<div class="board-phase-panel">
+					<h3>👑 Controles do Host</h3>
+					<button type="button" class="btn-secondary" id="btnMpHostResetBoard">
+						🔄 Reiniciar Tabuleiro / Nova Partida
+					</button>
+				</div>
+			`;
+			document
+				.getElementById("btnMpHostResetBoard")
+				.addEventListener("click", () => {
+					showGameConfigModal();
+				});
+			return;
+		}
+
+		const currentRoundObj = bs.rounds[bs.currentRound - 1] || bs.rounds[4];
+		const requiredSize = currentRoundObj.teamSize;
+		const playerPeers = bs.playerPeers || Array.from(multiplayerManager.players.values());
+
+		// Prune invalid peers
+		hostSelectedTeamPeers.forEach((id) => {
+			if (!playerPeers.some((p) => p.peerId === id)) {
+				hostSelectedTeamPeers.delete(id);
+			}
+		});
+
+		container.innerHTML = `
+			<div class="board-phase-panel host-mp-panel">
+				<h3>👑 Painel do Host — Rodada ${bs.currentRound}</h3>
+				<p class="info-text">Selecione os <strong>${requiredSize} agentes</strong> escalados pelo Líder para lançar a votação na tela de todos os celulares:</p>
+
+				<div class="host-team-picker">
+					${playerPeers
+						.map((p) => {
+							const isSelected = hostSelectedTeamPeers.has(p.peerId);
+							return `
+								<button type="button" class="team-pick-chip ${isSelected ? "selected" : ""}" data-pick-peer="${p.peerId}">
+									<span>${isSelected ? "✅" : "⬜"} ${p.name}</span>
+								</button>
+							`;
+						})
+						.join("")}
+				</div>
+
+				<div class="action-buttons-row" style="margin-top: 15px;">
+					<button type="button" class="btn-tactical approve" id="btnHostLaunchTeamVote" ${
+						hostSelectedTeamPeers.size !== requiredSize ? "disabled" : ""
+					}>
+						🗳️ Enviar Votação de Equipe p/ Todos (${hostSelectedTeamPeers.size}/${requiredSize})
+					</button>
+					<button type="button" class="btn-primary" id="btnHostLaunchMissionVote" ${
+						hostSelectedTeamPeers.size !== requiredSize ? "disabled" : ""
+					}>
+						🕵️ Enviar Votação Secreta da Missão (${hostSelectedTeamPeers.size}/${requiredSize})
+					</button>
+				</div>
+
+				<div class="manual-outcome-row" style="margin-top: 15px;">
+					<span class="manual-label">Atalhos Rápidos do Host (Mesa Física / Controle Direto):</span>
+					<div class="manual-btns">
+						<button type="button" class="btn-mini-outcome" id="btnHostNextLeader">⏭️ Passar Líder</button>
+						<button type="button" class="btn-mini-outcome" id="btnHostQuickReject">❌ +1 Equipe Rejeitada (${bs.rejectedTeamsCount}/5)</button>
+						<button type="button" class="btn-mini-outcome res" id="btnHostQuickRes">🛡️ Ponto Resistência</button>
+						<button type="button" class="btn-mini-outcome spy" id="btnHostQuickSpy">🗡️ Ponto Espiões</button>
+						${
+							bs.hasDesertor
+								? `<button type="button" class="btn-desertor-draw" id="btnHostDrawDesertor">🃏 Sortear Carta do Desertor</button>`
+								: ""
+						}
+					</div>
+				</div>
+			</div>
+		`;
+
+		// Attach chip toggles
+		container.querySelectorAll("[data-pick-peer]").forEach((chip) => {
+			chip.addEventListener("click", () => {
+				const pid = chip.dataset.pickPeer;
+				if (hostSelectedTeamPeers.has(pid)) {
+					hostSelectedTeamPeers.delete(pid);
+				} else {
+					if (hostSelectedTeamPeers.size >= requiredSize) {
+						alert(`Esta missão exige exatamente ${requiredSize} integrantes.`);
+						return;
+					}
+					hostSelectedTeamPeers.add(pid);
+				}
+				renderHostControlPanel(container, bs);
 			});
 		});
 
-		document.getElementById("modal-cancel").addEventListener("click", () => {
+		const btnLaunchTeam = document.getElementById("btnHostLaunchTeamVote");
+		if (btnLaunchTeam) {
+			btnLaunchTeam.addEventListener("click", () => {
+				multiplayerManager.startMultiplayerTeamApproval(
+					Array.from(hostSelectedTeamPeers)
+				);
+			});
+		}
+
+		const btnLaunchMission = document.getElementById("btnHostLaunchMissionVote");
+		if (btnLaunchMission) {
+			btnLaunchMission.addEventListener("click", () => {
+				multiplayerManager.startMultiplayerMissionVote(
+					Array.from(hostSelectedTeamPeers)
+				);
+			});
+		}
+
+		document
+			.getElementById("btnHostNextLeader")
+			.addEventListener("click", () => {
+				bs.leaderIndex = (bs.leaderIndex + 1) % bs.playerCount;
+				multiplayerManager.broadcastBoardSync(false);
+			});
+
+		document
+			.getElementById("btnHostQuickReject")
+			.addEventListener("click", () => {
+				GameManager.registerTeamVoteResult(bs, false);
+				multiplayerManager.broadcastBoardSync(false);
+			});
+
+		document.getElementById("btnHostQuickRes").addEventListener("click", () => {
+			GameManager.recordRoundOutcome(bs, "resistance", 0);
+			hostSelectedTeamPeers.clear();
+			multiplayerManager.broadcastBoardSync(false);
+		});
+
+		document.getElementById("btnHostQuickSpy").addEventListener("click", () => {
+			GameManager.recordRoundOutcome(bs, "spy", 1);
+			hostSelectedTeamPeers.clear();
+			multiplayerManager.broadcastBoardSync(false);
+		});
+
+		const btnDesertor = document.getElementById("btnHostDrawDesertor");
+		if (btnDesertor) {
+			btnDesertor.addEventListener("click", () => {
+				multiplayerManager.triggerMultiplayerDesertorDraw();
+			});
+		}
+	}
+
+	// Host Game Configuration Modal (Now includes all 7 special characters including Desertor + sub-options!)
+	function showGameConfigModal() {
+		const modal = document.createElement("div");
+		modal.className = "tactical-modal-overlay";
+
+		const playerCount = multiplayerManager.getPlayerCount();
+		const spyCount = GameManager.getSpyCount(playerCount);
+		const resCount = playerCount - spyCount;
+
+		modal.innerHTML = `
+			<div class="tactical-modal-card">
+				<h2>⚙️ Configurar Partida (${playerCount} Agentes)</h2>
+				<p class="info-text">Composição: <strong>${resCount} Resistência</strong> vs <strong>${spyCount} Espiões</strong>. Selecione os personagens especiais:</p>
+
+				<div class="characters-grid" style="margin: 15px 0;">
+					<label class="character-option resistance">
+						<input type="checkbox" value="comandante" checked>
+						<div class="character-card">
+							<h3>👑 Comandante</h3>
+							<span class="faction">Resistência</span>
+							<p>Conhece todos os espiões (exceto Agente Invisível)</p>
+						</div>
+					</label>
+
+					<label class="character-option resistance">
+						<input type="checkbox" value="guardacostas">
+						<div class="character-card">
+							<h3>🛡️ Guarda-Costas</h3>
+							<span class="faction">Resistência</span>
+							<p>Conhece quem é o Comandante (e Comandante Falso)</p>
+						</div>
+					</label>
+
+					<label class="character-option spy">
+						<input type="checkbox" value="assassino" checked>
+						<div class="character-card">
+							<h3>🗡️ Assassino</h3>
+							<span class="faction">Espião</span>
+							<p>Pode eliminar o Comandante caso a Resistência vença 3 missões</p>
+						</div>
+					</label>
+
+					<label class="character-option spy">
+						<input type="checkbox" value="espiaocego">
+						<div class="character-card">
+							<h3>👁️ Espião Cego</h3>
+							<span class="faction">Espião</span>
+							<p>Não conhece os outros espiões, mas é visto pelo Comandante</p>
+						</div>
+					</label>
+
+					<label class="character-option spy">
+						<input type="checkbox" value="agenteinvisivel">
+						<div class="character-card">
+							<h3>👻 Agente Invisível</h3>
+							<span class="faction">Espião</span>
+							<p>Invisível ao Comandante, mas conhece os outros espiões</p>
+						</div>
+					</label>
+
+					<label class="character-option spy">
+						<input type="checkbox" value="comandantefalso">
+						<div class="character-card">
+							<h3>👹 Comandante Falso</h3>
+							<span class="faction">Espião</span>
+							<p>Aparece como Comandante para o Guarda-Costas</p>
+						</div>
+					</label>
+
+					<label class="character-option neutral">
+						<input type="checkbox" value="desertor" id="mpModalDesertorCheck">
+						<div class="character-card">
+							<h3>🔄 Desertor (Par)</h3>
+							<span class="faction">Ambas Facções</span>
+							<p>1 Resistência + 1 Espião que podem trocar de lado a partir da 3ª rodada</p>
+						</div>
+					</label>
+				</div>
+
+				<div class="special-options">
+					<label class="radio-option" style="margin-bottom:8px;">
+						<input type="checkbox" id="mpOptCmdFalsoKnows">
+						<span>Comandante Falso conhece os outros espiões (Variante)</span>
+					</label>
+					<label class="radio-option">
+						<input type="checkbox" id="mpOptDesertoresKnow">
+						<span>Desertores se conhecem desde o início</span>
+					</label>
+				</div>
+
+				<div class="btn-group" style="margin-top: 20px;">
+					<button type="button" class="btn-secondary" id="modalCancelBtn">Cancelar</button>
+					<button type="button" class="btn-primary" id="modalStartBtn">🚀 Distribuir Cartas & Iniciar</button>
+				</div>
+			</div>
+		`;
+
+		document.body.appendChild(modal);
+
+		modal.querySelector("#modalCancelBtn").addEventListener("click", () => {
 			document.body.removeChild(modal);
 		});
 
-		document.getElementById("modal-start").addEventListener("click", () => {
-			config.selectedSpecials = Array.from(selectedSpecials);
+		modal.querySelector("#modalStartBtn").addEventListener("click", () => {
+			const checked = Array.from(
+				modal.querySelectorAll('.characters-grid input[type="checkbox"]:checked')
+			).map((cb) => cb.value);
 
-			// Start the game
+			const config = {
+				selectedSpecials: checked,
+				options: {
+					comandanteFalsoKnows: modal.querySelector("#mpOptCmdFalsoKnows").checked,
+					desertoresKnowEachOther: modal.querySelector("#mpOptDesertoresKnow").checked,
+				},
+			};
+
+			hostSelectedTeamPeers.clear();
 			multiplayerManager.startGame(config);
-
-			// Remove modal
 			document.body.removeChild(modal);
 		});
 	}
 
-	// Check for join code in URL
+	// Auto-fill join code if present in URL (?join=...)
 	const urlParams = new URLSearchParams(window.location.search);
 	const joinCode = urlParams.get("join");
 	if (joinCode) {
-		// IMPORTANTE: Normalizar para minúsculas (PeerJS é case-sensitive)
 		roomCodeInput.value = joinCode.toLowerCase();
-		// Auto-switch to join screen
-		// User still needs to enter name
+		if (playerNameInput.value.trim()) {
+			showScreen(joinScreen);
+		}
 	}
 });
