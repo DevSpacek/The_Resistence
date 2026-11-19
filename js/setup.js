@@ -383,7 +383,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 		// Navigate to reveal screen with cache-busting query string so old Service Worker never intercepts with stale reveal.html
 		const navLink = document.createElement("a");
-		navLink.href = "reveal.html?v=9";
+		navLink.href = "reveal.html?v=10";
 		navLink.style.display = "none";
 		document.body.appendChild(navLink);
 		navLink.click();

@@ -1213,7 +1213,7 @@ h1 {
 }
 
 .rej-pip.critical.active {
-	background: var(--resistance-bright);
+	background: var(--spy-bright);
 	border-color: #fff;
 	color: #fff;
 }

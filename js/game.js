@@ -571,7 +571,7 @@ const GameManager = {
 	},
 
 	// Record team approval vote result
-	// Per user rule: 5 consecutive failed team votes gives 1 round point to Resistance
+	// Official rule: 5 consecutive rejected teams awards the round/victory to the Spies
 	registerTeamVoteResult(boardState, approved) {
 		if (boardState.gameOver) return { action: "gameover" };
 
@@ -585,11 +585,11 @@ const GameManager = {
 			boardState.leaderIndex = (boardState.leaderIndex + 1) % boardState.playerCount;
 
 			if (boardState.rejectedTeamsCount >= 5) {
-				// 5 rejections in a row -> Point for Resistance!
-				this.recordRoundOutcome(boardState, "resistance", 0, "5 equipes rejeitadas seguidas (Ponto automático para a Resistência)");
+				// 5 rejections in a row -> Point for Spies!
+				this.recordRoundOutcome(boardState, "spy", 5, "5 equipes rejeitadas seguidas (Ponto automático para os Espiões)");
 				return {
 					action: "five_rejections_point",
-					message: "⚠️ 5 Equipes Rejeitadas! Ponto automático para a Resistência!",
+					message: "⚠️ 5 Equipes Rejeitadas seguidas! Vitória da rodada para os ESPIÕES!",
 				};
 			}
 

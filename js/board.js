@@ -137,7 +137,7 @@ class BoardUIController {
 								)
 								.join("")}
 						</div>
-						<span class="rej-rule-hint">5 falhas = Ponto automático para a Resistência</span>
+						<span class="rej-rule-hint">5 equipes rejeitadas = Ponto automático para os Espiões</span>
 					</div>
 				</div>
 		`;

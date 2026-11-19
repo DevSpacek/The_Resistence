@@ -1,4 +1,4 @@
-const CACHE_NAME = "the-resistance-v9"; // Bust stale HTML & JS caches across all pages
+const CACHE_NAME = "the-resistance-v10"; // 5 team rejections award point to Spies
 
 // Detecta automaticamente o caminho base (funciona com GitHub Pages e localhost)
 const getBasePath = () => {

@@ -35,7 +35,7 @@
 					</div>
 				</a>
 
-				<a href="multiplayer.html?v=9" class="mode-nav-card">
+				<a href="multiplayer.html?v=10" class="mode-nav-card">
 					<span class="mode-card-icon">🌐</span>
 					<div class="mode-card-body">
 						<strong>Multiplayer (Vários Aparelhos)</strong>
@@ -43,7 +43,7 @@
 					</div>
 				</a>
 
-				<a href="master.html?v=9" class="mode-nav-card master-card">
+				<a href="master.html?v=10" class="mode-nav-card master-card">
 					<span class="mode-card-icon">🎙️</span>
 					<div class="mode-card-body">
 						<strong>Modo Mestre / Narrador</strong>
@@ -214,8 +214,8 @@
 		</main>
 	</div>
 
-	<script src="js/game.js?v=9"></script>
-	<script src="js/setup.js?v=9"></script>
+	<script src="js/game.js?v=10"></script>
+	<script src="js/setup.js?v=10"></script>
 	<script>
 		// Auto-purge old caches from v1-v8 and force service worker refresh
 		if ('caches' in window) {
@@ -269,7 +269,7 @@
 		});
 
 		if ('serviceWorker' in navigator) {
-			navigator.serviceWorker.register('./service-worker.js?v=9').then(reg => {
+			navigator.serviceWorker.register('./service-worker.js?v=10').then(reg => {
 				reg.update();
 			}).catch(err => console.error(err));
 		}
