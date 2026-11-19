@@ -1,4 +1,4 @@
-const CACHE_NAME = "the-resistance-v6"; // Includes visual Mission Map board and hexagonal tokens
+const CACHE_NAME = "the-resistance-v8"; // Force fresh CSS & Mission Map board assets
 
 // Detecta automaticamente o caminho base (funciona com GitHub Pages e localhost)
 const getBasePath = () => {

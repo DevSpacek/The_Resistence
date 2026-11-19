@@ -8,7 +8,7 @@
 	<meta name="theme-color" content="#1e3a4c">
 	<title>Multiplayer Online - The Resistance</title>
 	<link rel="manifest" href="manifest.json">
-	<link rel="stylesheet" href="styles.css">
+	<link rel="stylesheet" href="styles.css?v=8">
 </head>
 
 <body>
@@ -212,9 +212,18 @@
 	<!-- Include QRCode library -->
 	<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 	<!-- Include game & board logic -->
-	<script src="js/game.js?v=7"></script>
-	<script src="js/board.js?v=7"></script>
-	<script src="js/multiplayer.js?v=7"></script>
+	<script src="js/game.js?v=8"></script>
+	<script src="js/board.js?v=8"></script>
+	<script src="js/multiplayer.js?v=8"></script>
+	<script>
+		if ("caches" in window) {
+			caches.keys().then((keys) => {
+				keys.forEach((key) => {
+					if (key !== "the-resistance-v8") caches.delete(key);
+				});
+			});
+		}
+	</script>
 </body>
 
 </html>

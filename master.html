@@ -10,7 +10,7 @@
 	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 	<title>The Resistance - Modo Mestre / Narrador</title>
 	<link rel="manifest" href="manifest.json">
-	<link rel="stylesheet" href="styles.css">
+	<link rel="stylesheet" href="styles.css?v=8">
 </head>
 
 <body>
@@ -66,9 +66,25 @@
 		</main>
 	</div>
 
-	<script src="js/game.js?v=7"></script>
-	<script src="js/board.js?v=7"></script>
+	<script src="js/game.js?v=8"></script>
+	<script src="js/board.js?v=8"></script>
 	<script>
+		// Auto-purge stale Service Worker caches (v1-v7) so new styles always apply
+		if ("caches" in window) {
+			caches.keys().then((keys) => {
+				keys.forEach((key) => {
+					if (key !== "the-resistance-v8") {
+						caches.delete(key);
+					}
+				});
+			});
+		}
+		if ("serviceWorker" in navigator) {
+			navigator.serviceWorker.getRegistrations().then((regs) => {
+				regs.forEach((r) => r.update());
+			});
+		}
+
 		document.addEventListener("DOMContentLoaded", () => {
 			let currentPlayers = 5;
 			const mount = document.getElementById("masterBoardMount");

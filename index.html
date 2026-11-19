@@ -11,7 +11,7 @@
 	<meta name="apple-mobile-web-app-title" content="The Resistance">
 	<title>The Resistance - Quartel General</title>
 	<link rel="manifest" href="manifest.json">
-	<link rel="stylesheet" href="styles.css">
+	<link rel="stylesheet" href="styles.css?v=8">
 </head>
 
 <body>
@@ -214,9 +214,20 @@
 		</main>
 	</div>
 
-	<script src="js/game.js?v=7"></script>
-	<script src="js/setup.js?v=7"></script>
+	<script src="js/game.js?v=8"></script>
+	<script src="js/setup.js?v=8"></script>
 	<script>
+		// Auto-purge old caches from v1-v6 so new CSS/JS always loads cleanly
+		if ('caches' in window) {
+			caches.keys().then(keys => {
+				keys.forEach(key => {
+					if (key !== 'the-resistance-v8') {
+						caches.delete(key);
+					}
+				});
+			});
+		}
+
 		// PWA Installation
 		let deferredPrompt;
 		const installButton = document.getElementById('btnInstall');
@@ -258,7 +269,9 @@
 		});
 
 		if ('serviceWorker' in navigator) {
-			navigator.serviceWorker.register('./service-worker.js').catch(err => console.error(err));
+			navigator.serviceWorker.register('./service-worker.js?v=8').then(reg => {
+				reg.update();
+			}).catch(err => console.error(err));
 		}
 	</script>
 </body>
