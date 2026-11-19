@@ -1,4 +1,4 @@
-const CACHE_NAME = "the-resistance-v8"; // Force fresh CSS & Mission Map board assets
+const CACHE_NAME = "the-resistance-v9"; // Bust stale HTML & JS caches across all pages
 
 // Detecta automaticamente o caminho base (funciona com GitHub Pages e localhost)
 const getBasePath = () => {

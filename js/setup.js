@@ -381,9 +381,9 @@ document.addEventListener("DOMContentLoaded", () => {
 			Array.from(selectedSpecials)
 		);
 
-		// Navigate to reveal screen using an anchor click (compatible with proxy/iframe wrappers that intercept location.href)
+		// Navigate to reveal screen with cache-busting query string so old Service Worker never intercepts with stale reveal.html
 		const navLink = document.createElement("a");
-		navLink.href = "reveal.html";
+		navLink.href = "reveal.html?v=9";
 		navLink.style.display = "none";
 		document.body.appendChild(navLink);
 		navLink.click();

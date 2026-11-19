@@ -17,7 +17,7 @@
 	<div class="container">
 		<header class="compact-header">
 			<div class="header-top-bar">
-				<a href="index.html" class="btn-nav-back">← Menu Principal</a>
+				<a href="index.html?v=9" class="btn-nav-back">← Menu Principal</a>
 				<span class="mode-pill" id="headerModeLabel">📱 Modo 1 Aparelho</span>
 			</div>
 			<h1>THE RESISTANCE</h1>
@@ -92,14 +92,14 @@
 		</div>
 	</div>
 
-	<script src="js/game.js?v=8"></script>
-	<script src="js/board.js?v=8"></script>
-	<script src="js/reveal.js?v=8"></script>
+	<script src="js/game.js?v=9"></script>
+	<script src="js/board.js?v=9"></script>
+	<script src="js/reveal.js?v=9"></script>
 	<script>
 		if ("caches" in window) {
 			caches.keys().then((keys) => {
 				keys.forEach((key) => {
-					if (key !== "the-resistance-v8") caches.delete(key);
+					if (key !== "the-resistance-v9") caches.delete(key);
 				});
 			});
 		}
