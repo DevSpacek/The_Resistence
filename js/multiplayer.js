@@ -946,6 +946,17 @@ document.addEventListener("DOMContentLoaded", () => {
 		});
 	};
 
+	GameManager.applySavedTheme();
+
+	window.addEventListener("resistanceThemeChanged", () => {
+		if (multiplayerManager.myRole) {
+			window.displayPlayerRole(multiplayerManager.myRole, false);
+		}
+		if (multiplayerManager.boardState && window.updateMultiplayerBoardUI) {
+			window.updateMultiplayerBoardUI(false);
+		}
+	});
+
 	// Display Player Role Card with full allies list & character tips!
 	window.displayPlayerRole = function (role, isLoyaltySwapAlert = false) {
 		const roleCard = document.getElementById("playerRoleCard");
@@ -953,13 +964,19 @@ document.addEventListener("DOMContentLoaded", () => {
 		playerRoleHiddenCover.classList.add("hidden");
 		btnToggleCardPrivacy.classList.remove("hidden");
 
+		const currentTheme = GameManager.getTheme();
 		roleCard.className = "role-card " + role.faction;
-		const bgImage =
-			role.bgImage ||
-			(role.faction === "resistance"
-				? "images_back/ally-1-en.jpg"
-				: "images_back/axis-1-en.jpg");
+		const bgImage = GameManager.getCardImageForRole(
+			role,
+			role.playerIndex || 0,
+			currentTheme
+		);
 		roleCard.style.backgroundImage = `url('${bgImage}')`;
+
+		const titleText =
+			currentTheme === "fantasy" && role.fantasyTitle
+				? role.fantasyTitle
+				: role.displayName;
 
 		// Build full allies & tactical tips HTML via shared GameManager method
 		const detailsHTML = GameManager.buildRoleInfoHTML(role);
@@ -970,7 +987,7 @@ document.addEventListener("DOMContentLoaded", () => {
 					<span class="badge-label">Agente:</span>
 					<span class="badge-number">${role.playerName || multiplayerManager.myPlayerName}</span>
 				</div>
-				<h2 class="role-title">${role.displayName}</h2>
+				<h2 class="role-title">${titleText}</h2>
 				<div class="faction-badge ${role.faction}">
 					${role.faction === "resistance" ? "Resistência" : "Espião"}
 				</div>

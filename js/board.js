@@ -42,21 +42,16 @@ class BoardUIController {
 		const needsTwoFails = currentRoundObj.requiresTwoFails;
 		const leaderName = bs.playerNames[bs.leaderIndex] || `Jogador ${bs.leaderIndex + 1}`;
 
-		// Coordinates of the 5 mission hexagons on images_back/mission-map.png (600x400)
-		const mapNodes = [
-			{ round: 1, name: "01 • Rescue", left: "11.83%", top: "50.75%" },
-			{ round: 2, name: "02 • Intelligence", left: "20.00%", top: "14.50%" },
-			{ round: 3, name: "03 • Infiltration", left: "55.67%", top: "27.50%" },
-			{ round: 4, name: "04* • Sabotage", left: "41.67%", top: "73.25%" },
-			{ round: 5, name: "05 • Ambush", left: "87.17%", top: "38.75%" },
-		];
+		// Load active theme assets (Fantasy RPG/Disney or Classic WWII)
+		const themeAssets = GameManager.getThemeAssets(bs.theme);
+		const mapNodes = themeAssets.mapNodes;
 
 		let html = `
 			<div class="tactical-board">
 				<!-- Top Score & Leader Bar -->
 				<div class="board-header-bar">
 					<div class="score-pill resistance-score">
-						<img src="images_back/token-ally.png" alt="Resistência" class="score-token-icon">
+						<img src="${themeAssets.tokenAlly}" alt="Resistência" class="score-token-icon">
 						<span class="score-label">RESISTÊNCIA</span>
 						<span class="score-value">${bs.resistanceWins}</span>
 					</div>
@@ -67,35 +62,37 @@ class BoardUIController {
 					<div class="score-pill spy-score">
 						<span class="score-value">${bs.spyWins}</span>
 						<span class="score-label">ESPIÕES</span>
-						<img src="images_back/token-axis.png" alt="Espiões" class="score-token-icon">
+						<img src="${themeAssets.tokenAxis}" alt="Espiões" class="score-token-icon">
 					</div>
 				</div>
 
 				<!-- Visual Mission Map Board with Overlaid Hexagonal Faction Tokens -->
-				<div class="mission-map-wrapper">
-					<img src="images_back/mission-map.png" alt="Mission Map - The Resistance" class="mission-map-img">
+				<div class="mission-map-wrapper theme-${themeAssets.theme}">
+					<img src="${themeAssets.missionMap}" alt="Mission Map - The Resistance" class="mission-map-img">
 					${bs.rounds
 						.map((r, idx) => {
 							const coords = mapNodes[idx];
 							let tokenHTML = "";
-							let badgeText = `${r.teamSize} Agentes`;
+							let badgeText = `M${r.round}: ${r.teamSize} Agentes`;
 							if (r.status === "resistance") {
-								tokenHTML = `<img src="images_back/token-ally.png" alt="Vitória da Resistência" class="hex-token-img token-drop-anim">`;
-								badgeText = "✓ Resistência";
+								tokenHTML = `<img src="${themeAssets.tokenAlly}" alt="Vitória da Resistência" class="hex-token-img token-drop-anim">`;
+								badgeText = `M${r.round}: ✓ Resistência`;
 							} else if (r.status === "spy") {
-								tokenHTML = `<img src="images_back/token-axis.png" alt="Vitória dos Espiões" class="hex-token-img token-drop-anim">`;
-								badgeText = r.failsCount ? `✖ ${r.failsCount} Falha(s)` : "✖ Sabotada";
+								tokenHTML = `<img src="${themeAssets.tokenAxis}" alt="Vitória dos Espiões" class="hex-token-img token-drop-anim">`;
+								badgeText = r.failsCount ? `M${r.round}: ✖ ${r.failsCount} Falha(s)` : `M${r.round}: ✖ Sabotada`;
 							} else if (r.status === "current") {
 								tokenHTML = `
 									<div class="hex-current-target">
-										<span class="hex-team-count">${r.teamSize}${r.requiresTwoFails ? "*" : ""}</span>
+										<span class="hex-round-num">0${r.round}${r.requiresTwoFails ? "*" : ""}</span>
+										<span class="hex-team-count">${r.teamSize}p</span>
 									</div>
 								`;
-								badgeText = `Atual (${r.teamSize} Agentes)`;
+								badgeText = `▶ Missão ${r.round} (${r.teamSize} Agentes)`;
 							} else {
 								tokenHTML = `
 									<div class="hex-pending-target">
-										<span class="hex-team-count-subtle">${r.teamSize}${r.requiresTwoFails ? "*" : ""}</span>
+										<span class="hex-round-num-subtle">0${r.round}${r.requiresTwoFails ? "*" : ""}</span>
+										<span class="hex-team-count-subtle">${r.teamSize}p</span>
 									</div>
 								`;
 							}

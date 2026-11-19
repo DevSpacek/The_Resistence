@@ -10,7 +10,7 @@
 	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 	<title>The Resistance - Modo Mestre / Narrador</title>
 	<link rel="manifest" href="manifest.json">
-	<link rel="stylesheet" href="styles.css?v=10">
+	<link rel="stylesheet" href="styles.css?v=11">
 </head>
 
 <body>
@@ -66,8 +66,8 @@
 		</main>
 	</div>
 
-	<script src="js/game.js?v=10"></script>
-	<script src="js/board.js?v=10"></script>
+	<script src="js/game.js?v=11"></script>
+	<script src="js/board.js?v=11"></script>
 	<script>
 		// Auto-purge stale Service Worker caches (v1-v7) so new styles always apply
 		if ("caches" in window) {
@@ -104,6 +104,10 @@
 			});
 
 			boardController.render();
+
+			window.addEventListener("resistanceThemeChanged", () => {
+				boardController.render();
+			});
 
 			function resetMasterBoard(playerCount) {
 				currentPlayers = playerCount;

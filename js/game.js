@@ -1,5 +1,126 @@
-// Game state, character definitions, and Mission Board Engine
+// Game state, character definitions, Theme Manager, and Mission Board Engine
 const GameManager = {
+	// Theme Management ('fantasy' = Fantasia RPG / Disney, 'classic' = Clássico Militar)
+	getTheme() {
+		return localStorage.getItem("resistanceTheme") || "fantasy";
+	},
+
+	setTheme(themeName) {
+		const valid = themeName === "classic" ? "classic" : "fantasy";
+		localStorage.setItem("resistanceTheme", valid);
+		if (document.body) {
+			document.body.setAttribute("data-theme", valid);
+		}
+		window.dispatchEvent(new CustomEvent("resistanceThemeChanged", { detail: { theme: valid } }));
+		return valid;
+	},
+
+	applySavedTheme() {
+		const current = this.getTheme();
+		if (document.body) {
+			document.body.setAttribute("data-theme", current);
+		}
+		return current;
+	},
+
+	getThemeAssets(themeOverride = null) {
+		const theme = themeOverride || this.getTheme();
+		if (theme === "classic") {
+			return {
+				theme: "classic",
+				name: "🎖️ Clássico Militar",
+				mainBg: "images_back/main-background.jpg",
+				missionMap: "images_back/mission-map.png",
+				tokenAlly: "images_back/token-ally.png",
+				tokenAxis: "images_back/token-axis.png",
+				mapNodes: [
+					{ round: 1, name: "01 • Rescue", left: "11.83%", top: "50.75%" },
+					{ round: 2, name: "02 • Intelligence", left: "20.00%", top: "14.50%" },
+					{ round: 3, name: "03 • Infiltration", left: "55.67%", top: "27.50%" },
+					{ round: 4, name: "04* • Sabotage", left: "41.67%", top: "73.25%" },
+					{ round: 5, name: "05 • Ambush", left: "87.17%", top: "38.75%" },
+				],
+			};
+		}
+
+		return {
+			theme: "fantasy",
+			name: "🐉 Fantasia Épica (RPG)",
+			mainBg: "images_fantasy/main-background.jpg",
+			missionMap: "images_fantasy/mission-map.jpg",
+			tokenAlly: "images_fantasy/token-ally.png",
+			tokenAxis: "images_fantasy/token-axis.png",
+			mapNodes: [
+				{ round: 1, name: "01 • Santuário da Floresta", left: "18.5%", top: "67.0%" },
+				{ round: 2, name: "02 • Pináculo de Cristal", left: "20.0%", top: "24.5%" },
+				{ round: 3, name: "03 • Fortaleza Real", left: "54.5%", top: "24.5%" },
+				{ round: 4, name: "04* • Abismo do Dragão", left: "57.0%", top: "74.0%" },
+				{ round: 5, name: "05 • Cidadela de Obsidiana", left: "82.5%", top: "43.0%" },
+			],
+		};
+	},
+
+	// Pick character card artwork according to active theme and character key
+	getCardImageForRole(role, index = 0, themeOverride = null) {
+		const theme = themeOverride || this.getTheme();
+
+		if (theme === "fantasy") {
+			const specialMap = {
+				comandante: "images_fantasy/comandante.jpg",
+				guardacostas: "images_fantasy/guardacostas.jpg",
+				assassino: "images_fantasy/assassino.jpg",
+				espiaocego: "images_fantasy/espiaocego.jpg",
+				agenteinvisivel: "images_fantasy/agenteinvisivel.jpg",
+				comandantefalso: "images_fantasy/comandantefalso.jpg",
+				desertorResistencia: "images_fantasy/desertor-ally.jpg",
+				desertorEspiao: "images_fantasy/desertor-axis.jpg",
+			};
+			if (role.key && specialMap[role.key]) {
+				return specialMap[role.key];
+			}
+			if (role.isDesertor) {
+				return role.faction === "resistance"
+					? "images_fantasy/desertor-ally.jpg"
+					: "images_fantasy/desertor-axis.jpg";
+			}
+			if (role.faction === "resistance") {
+				const fantasyAllies = [
+					"images_fantasy/ally-1.jpg",
+					"images_fantasy/ally-2.jpg",
+					"images_fantasy/ally-3.jpg",
+				];
+				return fantasyAllies[index % fantasyAllies.length];
+			} else {
+				const fantasySpies = [
+					"images_fantasy/axis-1.jpg",
+					"images_fantasy/axis-2.jpg",
+				];
+				return fantasySpies[index % fantasySpies.length];
+			}
+		}
+
+		// Classic theme
+		if (role.faction === "resistance") {
+			const resistanceImages = [
+				"images_back/ally-1-en.jpg",
+				"images_back/ally-2-en.jpg",
+				"images_back/ally-3-en.jpg",
+				"images_back/ally-4-en.jpg",
+				"images_back/ally-5.jpg",
+				"images_back/ally-6-en.jpg",
+			];
+			return resistanceImages[index % resistanceImages.length];
+		} else {
+			const spyImages = [
+				"images_back/axis-1-en.jpg",
+				"images_back/axis-2-en.jpg",
+				"images_back/axis-3-en.jpg",
+				"images_back/axis-4.jpg",
+			];
+			return spyImages[index % spyImages.length];
+		}
+	},
+
 	// Official Mission Requirements Table [round1..round5]
 	missionTable: {
 		5: [2, 3, 2, 3, 3],
@@ -16,6 +137,7 @@ const GameManager = {
 		comandante: {
 			name: "Comandante",
 			displayName: "👑 Comandante",
+			fantasyTitle: "🧙‍♂️ Comandante (Arquimago da Luz)",
 			faction: "resistance",
 			isSpecial: true,
 			knowsSpies: true,
@@ -26,6 +148,7 @@ const GameManager = {
 		guardacostas: {
 			name: "Guarda-Costas",
 			displayName: "🛡️ Guarda-Costas",
+			fantasyTitle: "🛡️ Guarda-Costas (Paladina Real)",
 			faction: "resistance",
 			isSpecial: true,
 			knowsCommander: true,
@@ -34,6 +157,7 @@ const GameManager = {
 		desertorResistencia: {
 			name: "Desertor",
 			displayName: "🔄 Desertor",
+			fantasyTitle: "⏳ Desertor (Mercenário do Destino)",
 			faction: "resistance",
 			isSpecial: true,
 			isDesertor: true,
@@ -44,6 +168,7 @@ const GameManager = {
 		assassino: {
 			name: "Assassino",
 			displayName: "🗡️ Assassino",
+			fantasyTitle: "🗡️ Assassino (Lâmina das Sombras)",
 			faction: "spy",
 			isSpecial: true,
 			knowsSpies: true,
@@ -54,6 +179,7 @@ const GameManager = {
 		espiaocego: {
 			name: "Espião Cego",
 			displayName: "👁️ Espião Cego",
+			fantasyTitle: "👁️ Espião Cego (Oráculo Vendado)",
 			faction: "spy",
 			isSpecial: true,
 			isBlind: true,
@@ -64,6 +190,7 @@ const GameManager = {
 		agenteinvisivel: {
 			name: "Agente Invisível",
 			displayName: "👻 Agente Invisível",
+			fantasyTitle: "👻 Agente Invisível (Espectro Ilusionista)",
 			faction: "spy",
 			isSpecial: true,
 			knowsSpies: true,
@@ -74,6 +201,7 @@ const GameManager = {
 		comandantefalso: {
 			name: "Comandante Falso",
 			displayName: "👹 Comandante Falso",
+			fantasyTitle: "👹 Comandante Falso (Feiticeiro Impostor)",
 			faction: "spy",
 			isSpecial: true,
 			isFalseCommander: true,
@@ -85,6 +213,7 @@ const GameManager = {
 		desertorEspiao: {
 			name: "Desertor",
 			displayName: "🔄 Desertor",
+			fantasyTitle: "⏳ Desertor (Renegado das Sombras)",
 			faction: "spy",
 			isSpecial: true,
 			isDesertor: true,
@@ -234,6 +363,7 @@ const GameManager = {
 			roles.push({
 				name: "Membro da Resistência",
 				displayName: "🎭 Membro da Resistência",
+				fantasyTitle: "⚔️ Membro da Resistência (Guardião da Luz)",
 				faction: "resistance",
 				isSpecial: false,
 				description: "Você é um membro leal da Resistência.",
@@ -246,6 +376,7 @@ const GameManager = {
 			roles.push({
 				name: "Espião",
 				displayName: "🕵️ Espião",
+				fantasyTitle: "🐉 Espião (Infiltrado das Sombras)",
 				faction: "spy",
 				isSpecial: false,
 				knowsSpies: true,
@@ -262,27 +393,9 @@ const GameManager = {
 		shuffledRoles.forEach((role, index) => {
 			role.playerName = playerNames[index] || `Jogador ${index + 1}`;
 			role.playerIndex = index;
-
-			// Assign deterministic card background image so it doesn't flicker
-			if (role.faction === "resistance") {
-				const resistanceImages = [
-					"images_back/ally-1-en.jpg",
-					"images_back/ally-2-en.jpg",
-					"images_back/ally-3-en.jpg",
-					"images_back/ally-4-en.jpg",
-					"images_back/ally-5.jpg",
-					"images_back/ally-6-en.jpg",
-				];
-				role.bgImage = resistanceImages[index % resistanceImages.length];
-			} else {
-				const spyImages = [
-					"images_back/axis-1-en.jpg",
-					"images_back/axis-2-en.jpg",
-					"images_back/axis-3-en.jpg",
-					"images_back/axis-4.jpg",
-				];
-				role.bgImage = spyImages[index % spyImages.length];
-			}
+			role.bgImage = this.getCardImageForRole(role, index);
+			role.bgImageFantasy = this.getCardImageForRole(role, index, "fantasy");
+			role.bgImageClassic = this.getCardImageForRole(role, index, "classic");
 
 			// Track desertores
 			if (role.isDesertor) {
@@ -741,4 +854,52 @@ const GameManager = {
 	clearGame() {
 		localStorage.removeItem("resistanceGame");
 	},
+
+	// Inject Theme Switcher Bar into the page header
+	mountThemeSwitcher() {
+		this.applySavedTheme();
+		if (document.getElementById("globalThemeSwitcher")) return;
+
+		const header = document.querySelector("header");
+		if (!header) return;
+
+		const current = this.getTheme();
+		const bar = document.createElement("div");
+		bar.id = "globalThemeSwitcher";
+		bar.className = "theme-switcher-bar";
+		bar.innerHTML = `
+			<span class="theme-switcher-label">🎨 Tema Visual:</span>
+			<div class="theme-switcher-pills">
+				<button type="button" class="theme-pill-btn ${current === "fantasy" ? "active" : ""}" data-set-theme="fantasy">
+					🐉 Fantasia RPG / Disney
+				</button>
+				<button type="button" class="theme-pill-btn ${current === "classic" ? "active" : ""}" data-set-theme="classic">
+					🎖️ Clássico Militar
+				</button>
+			</div>
+		`;
+
+		// Insert right after the subtitle or top bar
+		const subtitle = header.querySelector(".subtitle");
+		if (subtitle && subtitle.nextSibling) {
+			header.insertBefore(bar, subtitle.nextSibling);
+		} else {
+			header.appendChild(bar);
+		}
+
+		bar.querySelectorAll("[data-set-theme]").forEach((btn) => {
+			btn.addEventListener("click", () => {
+				const chosen = btn.dataset.setTheme;
+				this.setTheme(chosen);
+				bar.querySelectorAll("[data-set-theme]").forEach((b) => {
+					b.classList.toggle("active", b.dataset.setTheme === chosen);
+				});
+			});
+		});
+	},
 };
+
+document.addEventListener("DOMContentLoaded", () => {
+	GameManager.mountThemeSwitcher();
+});
+

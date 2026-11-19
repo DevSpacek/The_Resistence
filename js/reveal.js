@@ -51,6 +51,9 @@ document.addEventListener("DOMContentLoaded", () => {
 		window.scrollTo({ top: 0, behavior: "smooth" });
 	}
 
+	// Apply saved theme and re-render when theme changes
+	GameManager.applySavedTheme();
+
 	// Display role information
 	function displayRole(role) {
 		const roleCard = document.getElementById("roleCard");
@@ -59,18 +62,22 @@ document.addEventListener("DOMContentLoaded", () => {
 		const factionBadge = document.getElementById("factionBadge");
 		const roleInfo = document.getElementById("roleInfo");
 
+		const currentTheme = GameManager.getTheme();
 		roleCard.className = "role-card " + role.faction;
 		factionBadge.className = "faction-badge " + role.faction;
 
-		// Use pre-assigned background image or pick one by faction
-		const bgImage =
-			role.bgImage ||
-			(role.faction === "resistance"
-				? "images_back/ally-1-en.jpg"
-				: "images_back/axis-1-en.jpg");
+		// Use theme-specific card artwork
+		const bgImage = GameManager.getCardImageForRole(
+			role,
+			currentPlayer,
+			currentTheme
+		);
 		roleCard.style.backgroundImage = `url('${bgImage}')`;
 
-		roleTitle.textContent = role.displayName;
+		roleTitle.textContent =
+			currentTheme === "fantasy" && role.fantasyTitle
+				? role.fantasyTitle
+				: role.displayName;
 		roleIcon.textContent = role.displayName.split(" ")[0];
 		factionBadge.textContent =
 			role.faction === "resistance" ? "Resistência" : "Espião";
@@ -91,13 +98,14 @@ document.addEventListener("DOMContentLoaded", () => {
 	}
 
 	// Transition to Tactical Board after all players have viewed their cards
+	let activeBoardController = null;
 	function launchMissionBoard() {
 		revealFlowContainer.classList.add("hidden");
 		boardFlowContainer.classList.remove("hidden");
 		revealSubtitle.textContent = "Tabuleiro de Operações & Votação";
 
 		const mount = document.getElementById("tacticalBoardMount");
-		const boardController = new BoardUIController({
+		activeBoardController = new BoardUIController({
 			container: mount,
 			boardState: gameState.boardState,
 			roles: roles,
@@ -108,10 +116,18 @@ document.addEventListener("DOMContentLoaded", () => {
 				renderRecheckPlayers();
 			},
 		});
-		boardController.render();
+		activeBoardController.render();
 		renderRecheckPlayers();
 		window.scrollTo({ top: 0, behavior: "smooth" });
 	}
+
+	window.addEventListener("resistanceThemeChanged", () => {
+		if (activeBoardController) {
+			activeBoardController.render();
+		} else if (!document.getElementById("roleScreen").classList.contains("hidden")) {
+			displayRole(roles[currentPlayer]);
+		}
+	});
 
 	// Render secret re-check buttons for each player (useful especially if Desertor swaps loyalty)
 	function renderRecheckPlayers() {
@@ -136,12 +152,13 @@ document.addEventListener("DOMContentLoaded", () => {
 		const nameEl = document.getElementById("recheckModalPlayerName");
 		const mount = document.getElementById("recheckModalRoleMount");
 
+		const currentTheme = GameManager.getTheme();
 		nameEl.textContent = `Consulta Secreta: ${role.playerName}`;
-		const bgImage =
-			role.bgImage ||
-			(role.faction === "resistance"
-				? "images_back/ally-1-en.jpg"
-				: "images_back/axis-1-en.jpg");
+		const bgImage = GameManager.getCardImageForRole(role, idx, currentTheme);
+		const titleText =
+			currentTheme === "fantasy" && role.fantasyTitle
+				? role.fantasyTitle
+				: role.displayName;
 
 		// Step 1: Privacy confirmation inside modal (no native confirm() block)
 		mount.innerHTML = `
@@ -162,7 +179,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				mount.innerHTML = `
 					<div class="role-card ${role.faction}" style="background-image: url('${bgImage}'); min-height: 420px; margin-top: 12px;">
 						<div class="role-header">
-							<h2 class="role-title">${role.displayName}</h2>
+							<h2 class="role-title">${titleText}</h2>
 							<div class="faction-badge ${role.faction}">
 								${role.faction === "resistance" ? "Resistência" : "Espião"}
 							</div>

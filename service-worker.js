@@ -1,4 +1,4 @@
-const CACHE_NAME = "the-resistance-v10"; // 5 team rejections award point to Spies
+const CACHE_NAME = "the-resistance-v11"; // Includes original Fantasy RPG/Disney theme artwork & theme switcher
 
 // Detecta automaticamente o caminho base (funciona com GitHub Pages e localhost)
 const getBasePath = () => {
@@ -21,6 +21,10 @@ const urlsToCache = [
 	`${BASE_PATH}js/setup.js`,
 	`${BASE_PATH}js/reveal.js`,
 	`${BASE_PATH}js/multiplayer.js`,
+	`${BASE_PATH}images_fantasy/main-background.jpg`,
+	`${BASE_PATH}images_fantasy/mission-map.jpg`,
+	`${BASE_PATH}images_fantasy/token-ally.png`,
+	`${BASE_PATH}images_fantasy/token-axis.png`,
 	`${BASE_PATH}images_back/mission-map.png`,
 	`${BASE_PATH}images_back/token-ally.png`,
 	`${BASE_PATH}images_back/token-axis.png`,
