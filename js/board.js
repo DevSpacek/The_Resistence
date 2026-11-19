@@ -76,25 +76,24 @@ class BoardUIController {
 							let badgeText = `M${r.round}: ${r.teamSize} Agentes`;
 							if (r.status === "resistance") {
 								tokenHTML = `<img src="${themeAssets.tokenAlly}" alt="Vitória da Resistência" class="hex-token-img token-drop-anim">`;
-								badgeText = `M${r.round}: ✓ Resistência`;
+								badgeText = `✓ Resistência`;
 							} else if (r.status === "spy") {
 								tokenHTML = `<img src="${themeAssets.tokenAxis}" alt="Vitória dos Espiões" class="hex-token-img token-drop-anim">`;
-								badgeText = r.failsCount ? `M${r.round}: ✖ ${r.failsCount} Falha(s)` : `M${r.round}: ✖ Sabotada`;
+								badgeText = r.failsCount ? `✖ ${r.failsCount} Falha(s)` : `✖ Sabotada`;
 							} else if (r.status === "current") {
 								tokenHTML = `
 									<div class="hex-current-target">
-										<span class="hex-round-num">0${r.round}${r.requiresTwoFails ? "*" : ""}</span>
-										<span class="hex-team-count">${r.teamSize}p</span>
+										<span class="hex-team-count">${r.teamSize}${r.requiresTwoFails ? "*" : ""}</span>
 									</div>
 								`;
-								badgeText = `▶ Missão ${r.round} (${r.teamSize} Agentes)`;
+								badgeText = `▶ Atual (${r.teamSize} Agentes)`;
 							} else {
 								tokenHTML = `
 									<div class="hex-pending-target">
-										<span class="hex-round-num-subtle">0${r.round}${r.requiresTwoFails ? "*" : ""}</span>
-										<span class="hex-team-count-subtle">${r.teamSize}p</span>
+										<span class="hex-team-count-subtle">${r.teamSize}${r.requiresTwoFails ? "*" : ""}</span>
 									</div>
 								`;
+								badgeText = `${r.teamSize} Agentes`;
 							}
 
 							return `

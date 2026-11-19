@@ -1,4 +1,4 @@
-const CACHE_NAME = "the-resistance-v11"; // Includes original Fantasy RPG/Disney theme artwork & theme switcher
+const CACHE_NAME = "the-resistance-v12"; // Standardized Fantasy card borders, faction emblems & Portuguese Mission Map
 
 // Detecta automaticamente o caminho base (funciona com GitHub Pages e localhost)
 const getBasePath = () => {

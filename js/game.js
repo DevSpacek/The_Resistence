@@ -51,11 +51,11 @@ const GameManager = {
 			tokenAlly: "images_fantasy/token-ally.png",
 			tokenAxis: "images_fantasy/token-axis.png",
 			mapNodes: [
-				{ round: 1, name: "01 • Santuário da Floresta", left: "18.5%", top: "67.0%" },
-				{ round: 2, name: "02 • Pináculo de Cristal", left: "20.0%", top: "24.5%" },
-				{ round: 3, name: "03 • Fortaleza Real", left: "54.5%", top: "24.5%" },
-				{ round: 4, name: "04* • Abismo do Dragão", left: "57.0%", top: "74.0%" },
-				{ round: 5, name: "05 • Cidadela de Obsidiana", left: "82.5%", top: "43.0%" },
+				{ round: 1, name: "1. Bosque Encantado", left: "18.44%", top: "67.00%" },
+				{ round: 2, name: "2. Pináculo de Cristal", left: "20.00%", top: "24.50%" },
+				{ round: 3, name: "3. Fortaleza Real", left: "54.44%", top: "24.50%" },
+				{ round: 4, name: "4*. Abismo do Dragão", left: "57.00%", top: "74.00%" },
+				{ round: 5, name: "5. Cidadela Sombria", left: "82.44%", top: "43.00%" },
 			],
 		};
 	},
